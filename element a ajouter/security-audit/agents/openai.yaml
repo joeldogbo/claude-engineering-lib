@@ -1,0 +1,7 @@
+interface:
+  display_name: "Audit de Sécurité"
+  short_description: "Audit OWASP A01-A10 + tests d'intrusion (dev/staging uniquement)"
+  default_prompt: "Orchestre un audit de sécurité complet du projet"
+
+policy:
+  allow_implicit_invocation: false

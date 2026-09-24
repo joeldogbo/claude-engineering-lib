@@ -1,0 +1,7 @@
+interface:
+  display_name: "Revue PR/MR"
+  short_description: "Revue complète : qualité, sécurité, tests, verdict"
+  default_prompt: "Orchestre la revue de la MR : "
+
+policy:
+  allow_implicit_invocation: false

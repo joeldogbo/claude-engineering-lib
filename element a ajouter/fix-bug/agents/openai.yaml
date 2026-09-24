@@ -1,0 +1,7 @@
+interface:
+  display_name: "Fix de Bug"
+  short_description: "RCA + correction ciblée + test de non-régression"
+  default_prompt: "Orchestre le fix du bug : "
+
+policy:
+  allow_implicit_invocation: true

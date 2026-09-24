@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nouvelle Fonctionnalité"
+  short_description: "Workflow complet pour créer une feature de bout en bout"
+  default_prompt: "Orchestre la création de la fonctionnalité : "
+
+policy:
+  allow_implicit_invocation: true

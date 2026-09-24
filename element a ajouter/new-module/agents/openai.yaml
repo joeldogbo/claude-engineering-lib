@@ -1,0 +1,7 @@
+interface:
+  display_name: "Nouveau Module"
+  short_description: "Scaffold complet d'un nouveau module : DB, API, frontend, tests, docs"
+  default_prompt: "Orchestre la création du module : "
+
+policy:
+  allow_implicit_invocation: true

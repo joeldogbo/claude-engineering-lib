@@ -1,8 +1,11 @@
 #!/usr/bin/env pwsh
-# Installe la bibliotheque claude-engineering-lib dans le depot courant.
+# Installe la bibliotheque claude-engineering-lib dans le dossier .claude/ du depot courant.
+# Fonctionne avec Windows PowerShell 5.1 et PowerShell 7+ (Windows, macOS, Linux).
+#
 # Usage:
 #   iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex
 #   $env:CLAUDE_LIB_FORCE=1; iwr -useb .../install.ps1 | iex
+#   & ([scriptblock]::Create((iwr -useb .../install.ps1))) -Force -Version v1.2.0
 #
 # Ou en local:
 #   .\install.ps1 -Force -Version v1.2.0 -TargetDir .
@@ -16,6 +19,10 @@ param(
     [string]$Version = "",
     [string]$TargetDir = (Get-Location).Path
 )
+
+# Resultat lu apres le bloc : un echec ne ferme jamais la fenetre de l'utilisateur
+# (lancement via iex), mais renvoie le code 1 quand le script est lance comme fichier.
+$__claudeLibInstall = @{ Failed = $false }
 
 # Bloc isole : lance via `iex`, le script s'execute dans la session de l'utilisateur.
 # Ce bloc evite d'y laisser variables, fonctions et preferences modifiees.
@@ -89,6 +96,23 @@ param(
         $State.TaskPending = $false
     }
 
+    # Derniere release via la redirection de github.com/<repo>/releases/latest :
+    # contrairement a l'API GitHub, elle n'est pas limitee a 60 appels par heure.
+    # Renvoie "" si le depot n'a encore aucune release.
+    function Resolve-LatestVersion {
+        try {
+            $request = [Net.WebRequest]::Create("https://github.com/$Repo/releases/latest")
+            $request.Method = 'HEAD'
+            $request.UserAgent = 'claude-engineering-lib-installer'
+            $response = $request.GetResponse()
+            try { $finalUrl = $response.ResponseUri.AbsoluteUri } finally { $response.Close() }
+        } catch {
+            throw "Impossible de joindre GitHub pour trouver la derni${eg}re version ($($_.Exception.Message))."
+        }
+        if ($finalUrl -match '/releases/tag/([^/?#]+)$') { return [Uri]::UnescapeDataString($Matches[1]) }
+        return ""
+    }
+
     function Invoke-Download([string]$Url, [string]$OutFile) {
         $client = New-Object System.Net.WebClient
         $client.Headers.Add('User-Agent', 'claude-engineering-lib-installer')
@@ -115,19 +139,19 @@ param(
     try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-    if (-not $Version) {
-        try {
-            $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest").tag_name
-        } catch {
-            $Version = ""
-        }
-    }
-
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
-    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
     try {
-        if ($Version) {
+        if (-not (Get-Command tar -ErrorAction SilentlyContinue)) {
+            throw "La commande tar est introuvable. Sous Windows, elle est fournie a partir de Windows 10 version 1803."
+        }
+        if (-not $Version) { $Version = Resolve-LatestVersion }
+
+        if ($Version -eq 'main') {
+            Show-Banner "main"
+            $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.tar.gz"
+            Write-TaskStart "T${e}l${e}chargement" "main"
+        } elseif ($Version) {
             Show-Banner $Version
             $archiveUrl = "https://github.com/$Repo/archive/refs/tags/$Version.tar.gz"
             Write-TaskStart "T${e}l${e}chargement" $Version
@@ -137,6 +161,7 @@ param(
             Write-TaskStart "T${e}l${e}chargement" "main (aucune release)"
         }
 
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
         $archivePath = Join-Path $tmpDir "lib.tar.gz"
         Invoke-Download $archiveUrl $archivePath
         tar -xzf $archivePath -C $tmpDir
@@ -160,8 +185,13 @@ param(
                 $skipped += ".claude/$item/"
                 Write-TaskEnd 'SKIP'
             } else {
+                # Copie complete a cote avant de remplacer : un echec en cours de copie
+                # laisse l'ancienne version intacte.
+                $staging = "$dstItem.new"
+                if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+                Copy-Item $srcItem $staging -Recurse
                 if (Test-Path $dstItem) { Remove-Item $dstItem -Recurse -Force }
-                Copy-Item $srcItem $dstItem -Recurse
+                Move-Item $staging $dstItem
                 Write-TaskEnd 'DONE'
             }
         }
@@ -191,6 +221,7 @@ param(
         Write-Host ("  " + (Paint $Star $Green) + " " + (Paint "github.com/$Repo" $Gray))
         Write-Host ""
     } catch {
+        $__claudeLibInstall.Failed = $true
         if ($State.TaskPending) { Write-TaskEnd 'FAIL' }
         Write-Host ""
         Write-Host ("  " + (Paint " ERREUR " $BadgeErr) + " " + $_.Exception.Message)
@@ -200,3 +231,8 @@ param(
         try { [Console]::OutputEncoding = $prevEncoding } catch {}
     }
 }
+
+$__claudeLibFailed = $__claudeLibInstall.Failed
+Remove-Variable __claudeLibInstall
+if ($__claudeLibFailed -and $PSCommandPath) { exit 1 }
+Remove-Variable __claudeLibFailed

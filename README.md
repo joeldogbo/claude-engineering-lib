@@ -33,7 +33,19 @@ curl -fsSL .../install.sh | bash -s -- --version v1.2.0
 curl -fsSL .../install.sh | bash -s -- --dir ./mon-projet
 ```
 
-Équivalents PowerShell : `-Force`, `-Version v1.2.0`, `-TargetDir ./mon-projet`.
+Équivalents PowerShell : `-Force`, `-Version v1.2.0`, `-TargetDir ./mon-projet`. Pour les passer à l'installation en une commande :
+
+```powershell
+& ([scriptblock]::Create((iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1))) -Force -Version v1.2.0
+```
+
+Depuis l'invite de commandes Windows (`cmd.exe`), où `iwr` n'existe pas :
+
+```bat
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex"
+```
+
+Compatibilité, vérifiée à chaque modification des installateurs par la CI ([`install.yml`](.github/workflows/install.yml)) : `install.sh` sous Linux, macOS et Git Bash (Windows) ; `install.ps1` sous Windows PowerShell 5.1 et PowerShell 7 (Windows, Linux, macOS). Si PowerShell refuse d'exécuter un `install.ps1` téléchargé (politique d'exécution), utiliser la commande `iwr ... | iex` ci-dessus, qui n'y est pas soumise.
 
 ### Installation manuelle
 

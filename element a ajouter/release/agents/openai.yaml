@@ -1,0 +1,7 @@
+interface:
+  display_name: "Release"
+  short_description: "Préparation complète d'une release : tests, sécurité, perf, docs, CI"
+  default_prompt: "Orchestre la release version : "
+
+policy:
+  allow_implicit_invocation: false
