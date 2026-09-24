@@ -1,0 +1,17 @@
+# Config locale Claude Code (spécifique à la machine, jamais partagée)
+settings.local.json
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Fichiers temporaires
+*.tmp
+*.bak
