@@ -17,7 +17,7 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 3. **Enchaîne les agents d'analyse après une implémentation** qui touche leur domaine : `code-reviewer` après toute modification de code non triviale ; `security` si le changement touche l'authentification, les permissions, les entrées utilisateur ou des données sensibles ; `accessibility` et `ux-ui` après un changement d'interface ; `testing` quand une logique métier change.
 4. **Pas de délégation** pour une question de culture générale, une conversation, une précision sur ta réponse précédente ou une modification d'une ligne : réponds directement.
 5. **Annonce en une ligne** les agents lancés et pourquoi (ex. « Je lance `backend` pour l'endpoint et `database` pour la migration. »), puis restitue une synthèse de leurs résultats — jamais leurs rapports bruts.
-6. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, audit, préparation de PR...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement.
+6. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, nouveau module, correction de bug, audit, revue de PR, release...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement. Une release ne se tague et ne se déploie jamais sans accord explicite de l'utilisateur.
 
 | La demande parle de... | Agent(s) |
 |---|---|
@@ -101,7 +101,7 @@ Fiches de référence condensées, lues à la demande par les agents/skills : `s
 
 ## Workflows (`workflows/`)
 
-Invocables via `/workflow <nom>` : `feature-development`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`.
+Invocables via `/workflow <nom>` : `feature-development`, `new-module`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`, `release`.
 
 ## Étendre la bibliothèque
 

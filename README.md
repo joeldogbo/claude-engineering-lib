@@ -59,7 +59,7 @@ cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE
 
 ## Contenu
 
-Voir [CLAUDE.md](CLAUDE.md) pour l'index complet : 21 agents (architecture, backend, frontend, sécurité, performance, tests, devops, conformité...), 17 skills, 9 standards de référence, 5 templates et 12 workflows invocables via `/workflow <nom>`.
+Voir [CLAUDE.md](CLAUDE.md) pour l'index complet : 21 agents (architecture, backend, frontend, sécurité, performance, tests, devops, conformité...), 17 skills, 9 standards de référence, 5 templates et 14 workflows invocables via `/workflow <nom>`.
 
 ## Utilisation
 
