@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Installe la bibliothèque claude-engineering-lib dans le dépôt courant.
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/dogbojoel30/claude-engineering-lib/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.sh | bash
 #   curl -fsSL .../install.sh | bash -s -- --force        # écrase les fichiers existants
 #   curl -fsSL .../install.sh | bash -s -- --version v1.2.0
 
 set -euo pipefail
 
-REPO="dogbojoel30/claude-engineering-lib"
+REPO="joeldogbo/claude-engineering-lib"
 TARGET_DIR="$(pwd)"
 FORCE=0
 VERSION=""

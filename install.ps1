@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Installe la bibliothèque claude-engineering-lib dans le dépôt courant.
 # Usage:
-#   iwr -useb https://raw.githubusercontent.com/dogbojoel30/claude-engineering-lib/main/install.ps1 | iex
+#   iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex
 #   $env:CLAUDE_LIB_FORCE=1; iwr -useb .../install.ps1 | iex
 #
 # Ou en local:
@@ -14,7 +14,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Repo = "dogbojoel30/claude-engineering-lib"
+$Repo = "joeldogbo/claude-engineering-lib"
 
 if (-not $Version) {
     try {

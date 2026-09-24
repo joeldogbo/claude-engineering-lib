@@ -9,13 +9,13 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 ### macOS / Linux / WSL / Git Bash
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dogbojoel30/claude-engineering-lib/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/dogbojoel30/claude-engineering-lib/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex
 ```
 
 Le script télécharge la dernière release (ou la branche `main` si aucune release n'existe encore) et copie les dossiers `agents/`, `skills/`, `standards/`, `templates/`, `workflows/` ainsi que `CLAUDE.md` dans le dépôt courant, **sans écraser** ce qui existe déjà.
@@ -40,7 +40,7 @@ curl -fsSL .../install.sh | bash -s -- --dir ./mon-projet
 Cloner le dépôt et copier les dossiers qui t'intéressent :
 
 ```bash
-git clone https://github.com/dogbojoel30/claude-engineering-lib.git
+git clone https://github.com/joeldogbo/claude-engineering-lib.git
 cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE.md} mon-projet/
 ```
 
@@ -54,7 +54,7 @@ Une fois installée dans un projet, la bibliothèque est lue automatiquement par
 
 ## Releases
 
-Les [releases](https://github.com/dogbojoel30/claude-engineering-lib/releases) marquent des versions stables (`vMAJOR.MINOR.PATCH`, voir [standards/semver-conventional-commits.md](standards/semver-conventional-commits.md)). Les scripts d'installation ciblent la dernière release par défaut, plutôt que `main` qui peut être en cours de modification — ça évite d'installer une version instable et permet de savoir précisément ce qui change d'une version à l'autre (changelog généré automatiquement).
+Les [releases](https://github.com/joeldogbo/claude-engineering-lib/releases) marquent des versions stables (`vMAJOR.MINOR.PATCH`, voir [standards/semver-conventional-commits.md](standards/semver-conventional-commits.md)). Les scripts d'installation ciblent la dernière release par défaut, plutôt que `main` qui peut être en cours de modification — ça évite d'installer une version instable et permet de savoir précisément ce qui change d'une version à l'autre (changelog généré automatiquement).
 
 ## Étendre la bibliothèque
 
