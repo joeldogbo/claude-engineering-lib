@@ -18,7 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/ma
 iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex
 ```
 
-Le script télécharge la dernière release (ou la branche `main` si aucune release n'existe encore) et copie les dossiers `agents/`, `skills/`, `standards/`, `templates/`, `workflows/` ainsi que `CLAUDE.md` dans le dépôt courant, **sans écraser** ce qui existe déjà.
+Le script télécharge la dernière release (ou la branche `main` si aucune release n'existe encore) et copie les dossiers `agents/`, `skills/`, `standards/`, `templates/`, `workflows/` ainsi que `CLAUDE.md` dans le dossier `.claude/` du dépôt courant — là où Claude Code les découvre — **sans écraser** ce qui existe déjà. Le `CLAUDE.md` propre au projet, à la racine, n'est pas touché : Claude Code charge les deux.
 
 Options utiles :
 
@@ -41,7 +41,8 @@ Cloner le dépôt et copier les dossiers qui t'intéressent :
 
 ```bash
 git clone https://github.com/joeldogbo/claude-engineering-lib.git
-cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE.md} mon-projet/
+mkdir -p mon-projet/.claude
+cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE.md} mon-projet/.claude/
 ```
 
 ## Contenu
@@ -50,7 +51,9 @@ Voir [CLAUDE.md](CLAUDE.md) pour l'index complet : 21 agents (architecture, back
 
 ## Utilisation
 
-Une fois installée dans un projet, la bibliothèque est lue automatiquement par Claude Code via le `CLAUDE.md` du dépôt. Les workflows se lancent avec `/workflow <nom>`, par exemple `/workflow feature-development` ou `/workflow security-audit`.
+Une fois installée dans un projet, la bibliothèque est chargée automatiquement par Claude Code via `.claude/CLAUDE.md`. **Décris simplement ta tâche** : à la fin de ton message, Claude choisit et lance lui-même les agents concernés (par exemple `backend` + `database` pour une nouvelle fonctionnalité avec migration, puis `code-reviewer` et `security` sur le résultat). Inutile d'écrire « lance les agents ».
+
+Pour forcer un agent précis, nomme-le (« utilise l'agent `performance` »). Les workflows complets se lancent avec `/workflow <nom>`, par exemple `/workflow feature-development` ou `/workflow security-audit`.
 
 ## Releases
 

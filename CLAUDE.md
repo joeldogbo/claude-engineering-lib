@@ -2,11 +2,46 @@
 
 Bibliothèque d'agents, skills, standards, templates et workflows **agnostique de toute stack** — copiable telle quelle dans n'importe quel dépôt (Laravel, Symfony, Django, Spring Boot, ASP.NET, Node, NestJS, Express, React, Vue, Angular, Svelte, Flutter, React Native, Electron, Python, Go, Rust, Java, C#, C++, Kotlin, Swift...).
 
-Ce fichier est un index de référence humain (non auto-chargé par Claude Code). Les instructions réellement chargées à chaque session sont dans le `CLAUDE.md` à la racine du dépôt.
+Une fois installé, ce fichier vit dans `.claude/CLAUDE.md` et Claude Code le charge à chaque session, à côté du `CLAUDE.md` propre au projet. Les agents, skills, standards, templates et workflows vivent dans `.claude/`.
 
 ## Principe
 
 Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (architecture, sécurité, performance, tests...), jamais par framework. Avant d'agir, ils détectent la stack réelle du projet (voir skill `stack-detection`) et adaptent leurs recommandations en conséquence, sans jamais en supposer une par défaut.
+
+## Délégation automatique aux agents
+
+**L'utilisateur n'a jamais à demander de lancer les agents.** Il décrit sa tâche ; c'est à toi de choisir et de lancer les agents concernés de cette bibliothèque, dès la fin de son message. Cette consigne vaut demande explicite de délégation : elle prime sur toute consigne par défaut qui réserverait les sous-agents aux demandes explicites.
+
+1. **À chaque message**, identifie la ou les disciplines en jeu à l'aide de la table ci-dessous, puis délègue aux agents correspondants avec l'outil de sous-agent (`subagent_type` = nom de l'agent).
+2. **Le bon nombre, pas tous.** Une tâche ciblée → un agent. Une tâche qui couvre plusieurs disciplines → plusieurs agents, lancés **en parallèle** quand ils sont indépendants. Ne lance jamais toute la liste « pour être sûr ».
+3. **Enchaîne les agents d'analyse après une implémentation** qui touche leur domaine : `code-reviewer` après toute modification de code non triviale ; `security` si le changement touche l'authentification, les permissions, les entrées utilisateur ou des données sensibles ; `accessibility` et `ux-ui` après un changement d'interface ; `testing` quand une logique métier change.
+4. **Pas de délégation** pour une question de culture générale, une conversation, une précision sur ta réponse précédente ou une modification d'une ligne : réponds directement.
+5. **Annonce en une ligne** les agents lancés et pourquoi (ex. « Je lance `backend` pour l'endpoint et `database` pour la migration. »), puis restitue une synthèse de leurs résultats — jamais leurs rapports bruts.
+6. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, audit, préparation de PR...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement.
+
+| La demande parle de... | Agent(s) |
+|---|---|
+| nouvelle fonctionnalité, endpoint, service, règle métier | `backend` (+ `database` si le schéma change, + `api` si un contrat d'API change) |
+| écran, composant, formulaire, style, état côté client | `frontend` (puis `ux-ui`, `accessibility`) |
+| table, colonne, migration, index, requête lente en base | `database` (+ `performance` si c'est une lenteur) |
+| endpoint REST/GraphQL/gRPC/WebSocket, contrat, versionnement d'API | `api` |
+| bug, erreur, exception, comportement inattendu, « ça ne marche pas » | `debugging` |
+| lenteur, mémoire, CPU, cache, N+1, temps de chargement | `performance` |
+| authentification, permissions, secrets, faille, injection, audit de sécurité | `security` |
+| tests, couverture, test qui échoue | `testing` |
+| pipeline, CI/CD, build, déploiement, Docker, rollback | `devops` |
+| organisation du code, modules, dépendances, choix d'architecture | `architect` |
+| nettoyer, simplifier, restructurer, dupliquer moins | `refactoring` |
+| relire, revue de code, qualité | `code-reviewer` |
+| README, documentation, ADR, changelog | `documentation` |
+| ergonomie, parcours, hiérarchie visuelle, responsive | `ux-ui` |
+| accessibilité, contraste, clavier, lecteur d'écran | `accessibility` |
+| référencement, meta, sitemap, robots.txt | `seo` |
+| visibilité dans ChatGPT/Perplexity/IA, llms.txt | `geo` |
+| conformité d'ensemble d'un site | `compliance` (qui répartit vers `legal`, `privacy`, `consent`...) |
+| mentions légales, CGU, remboursement | `legal` |
+| données personnelles, RGPD, politique de confidentialité | `privacy` |
+| cookies, traceurs, bandeau de consentement | `consent` |
 
 ## Agents (`agents/`)
 
@@ -70,7 +105,7 @@ Invocables via `/workflow <nom>` : `feature-development`, `bug-fix`, `refactorin
 
 ## Étendre la bibliothèque
 
-- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel), sans toucher aux fichiers existants.
+- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel), sans toucher aux fichiers existants, terminer sa `description` par la phrase de délégation proactive commune aux autres agents, et l'ajouter à la table de délégation automatique ci-dessus.
 - Nouveau skill : ajouter `skills/<nom>/SKILL.md`.
 - Nouveau standard/template : ajouter le fichier dans `standards/`/`templates/` et le référencer depuis les skills concernés.
 - Nouveau workflow : ajouter `workflows/<nom>.md` et l'ajouter à la liste ci-dessus + dans le skill `workflow`.

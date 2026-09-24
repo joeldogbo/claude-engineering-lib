@@ -1,6 +1,6 @@
 ---
 name: performance
-description: Analyse les performances — mémoire, CPU, temps d'exécution, cache, appels réseau, requêtes base de données, chargement des données, parallélisation. Utiliser quand une lenteur est signalée ou avant un audit de performance. Analyse uniquement, ne modifie pas le code.
+description: Analyse les performances — mémoire, CPU, temps d'exécution, cache, appels réseau, requêtes base de données, chargement des données, parallélisation. Utiliser quand une lenteur est signalée ou avant un audit de performance. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
 tools: Read, Grep, Glob, Bash
 ---
 

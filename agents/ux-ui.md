@@ -1,6 +1,6 @@
 ---
 name: ux-ui
-description: Analyse l'ergonomie, la hiérarchie visuelle, la cohérence graphique, le responsive et la navigation d'une interface. Utiliser pour une revue UX/UI avant de livrer un écran/composant. Analyse uniquement, ne modifie pas le code.
+description: Analyse l'ergonomie, la hiérarchie visuelle, la cohérence graphique, le responsive et la navigation d'une interface. Utiliser pour une revue UX/UI avant de livrer un écran/composant. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
 tools: Read, Grep, Glob, Bash
 ---
 

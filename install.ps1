@@ -29,6 +29,7 @@ param(
     $e     = [char]0x00E9   # e accent aigu
     $eg    = [char]0x00E8   # e accent grave
     $ag    = [char]0x00E0   # a accent grave
+    $ac    = [char]0x00E2   # a accent circonflexe
     $Pixel = [string][char]0x2588 * 2
     $Arrow = [char]0x2192
     $Star  = [char]0x2605
@@ -146,16 +147,17 @@ param(
         $srcDir = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
         $copyItems = @("agents", "skills", "standards", "templates", "workflows")
         $skipped = @()
-        New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+        $ClaudeDir = Join-Path $TargetDir ".claude"
+        New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
 
         foreach ($item in $copyItems) {
             $srcItem = Join-Path $srcDir.FullName $item
-            $dstItem = Join-Path $TargetDir $item
+            $dstItem = Join-Path $ClaudeDir $item
             if (-not (Test-Path $srcItem)) { continue }
 
-            Write-TaskStart "$item/" ("(" + @(Get-ChildItem $srcItem).Count + ")")
+            Write-TaskStart ".claude/$item/" ("(" + @(Get-ChildItem $srcItem).Count + ")")
             if ((Test-Path $dstItem) -and (-not $Force)) {
-                $skipped += "$item/"
+                $skipped += ".claude/$item/"
                 Write-TaskEnd 'SKIP'
             } else {
                 if (Test-Path $dstItem) { Remove-Item $dstItem -Recurse -Force }
@@ -164,12 +166,12 @@ param(
             }
         }
 
-        $dstClaudeMd = Join-Path $TargetDir "CLAUDE.md"
+        $dstClaudeMd = Join-Path $ClaudeDir "CLAUDE.md"
         $srcClaudeMd = Join-Path $srcDir.FullName "CLAUDE.md"
         $claudeMdKept = (Test-Path $dstClaudeMd) -and (-not $Force)
-        Write-TaskStart "CLAUDE.md"
+        Write-TaskStart ".claude/CLAUDE.md"
         if ($claudeMdKept) {
-            Copy-Item $srcClaudeMd (Join-Path $TargetDir "CLAUDE.md.claude-engineering-lib") -Force
+            Copy-Item $srcClaudeMd (Join-Path $ClaudeDir "CLAUDE.md.claude-engineering-lib") -Force
             Write-TaskEnd 'MERGE'
         } else {
             Copy-Item $srcClaudeMd $dstClaudeMd -Force
@@ -182,10 +184,10 @@ param(
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " D${e}j${ag} pr${e}sents, conserv${e}s : " + ($skipped -join ', ') + ". Relance avec " + (Paint '-Force' '1') + " pour les ${e}craser.")
         }
         if ($claudeMdKept) {
-            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " CLAUDE.md existant conserv${e} : la version de la biblioth${eg}que est dans " + (Paint 'CLAUDE.md.claude-engineering-lib' '1') + ", ${ag} fusionner.")
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/CLAUDE.md existant conserv${e} : la version de la biblioth${eg}que est dans " + (Paint '.claude/CLAUDE.md.claude-engineering-lib' '1') + ", ${ag} fusionner.")
         }
         Write-Host ""
-        Write-Host ("  " + (Paint $Arrow $Green) + " Ouvre Claude Code ici, puis lance " + (Paint "/workflow feature-development" "1;$Green"))
+        Write-Host ("  " + (Paint $Arrow $Green) + " Ouvre Claude Code ici et d${e}cris ta t${ac}che : " + (Paint "les agents se lancent tout seuls." "1;$Green"))
         Write-Host ("  " + (Paint $Star $Green) + " " + (Paint "github.com/$Repo" $Gray))
         Write-Host ""
     } catch {

@@ -1,6 +1,6 @@
 ---
 name: accessibility
-description: Analyse l'accessibilité d'une interface — contraste, navigation clavier, lecteurs d'écran, sémantique HTML/ARIA. Utiliser pour un audit d'accessibilité ou avant de livrer un composant/écran destiné à un large public. Analyse uniquement, ne modifie pas le code.
+description: Analyse l'accessibilité d'une interface — contraste, navigation clavier, lecteurs d'écran, sémantique HTML/ARIA. Utiliser pour un audit d'accessibilité ou avant de livrer un composant/écran destiné à un large public. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Revoit la qualité du code — lisibilité, duplication, complexité, dette technique, conventions, commentaires. Utiliser après avoir écrit ou modifié du code, ou pour une revue de code explicite. Analyse uniquement, ne modifie pas le code.
+description: Revoit la qualité du code — lisibilité, duplication, complexité, dette technique, conventions, commentaires. Utiliser après avoir écrit ou modifié du code, ou pour une revue de code explicite. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
 tools: Read, Grep, Glob, Bash
 ---
 

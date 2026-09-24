@@ -136,30 +136,31 @@ SRC_DIR="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d)"
 
 COPY_ITEMS=(agents skills standards templates workflows)
 SKIPPED=""
-mkdir -p "$TARGET_DIR"
+CLAUDE_DIR="$TARGET_DIR/.claude"
+mkdir -p "$CLAUDE_DIR"
 
 for item in "${COPY_ITEMS[@]}"; do
   if [[ ! -d "$SRC_DIR/$item" ]]; then continue; fi
   count="$(find "$SRC_DIR/$item" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
-  task_start "$item/" "($count)"
-  if [[ -d "$TARGET_DIR/$item" && $FORCE -eq 0 ]]; then
-    SKIPPED="${SKIPPED:+$SKIPPED, }$item/"
+  task_start ".claude/$item/" "($count)"
+  if [[ -d "$CLAUDE_DIR/$item" && $FORCE -eq 0 ]]; then
+    SKIPPED="${SKIPPED:+$SKIPPED, }.claude/$item/"
     task_end SKIP
   else
-    rm -rf "$TARGET_DIR/$item"
-    cp -R "$SRC_DIR/$item" "$TARGET_DIR/$item"
+    rm -rf "$CLAUDE_DIR/$item"
+    cp -R "$SRC_DIR/$item" "$CLAUDE_DIR/$item"
     task_end DONE
   fi
 done
 
 CLAUDE_MD_KEPT=0
-task_start "CLAUDE.md"
-if [[ -f "$TARGET_DIR/CLAUDE.md" && $FORCE -eq 0 ]]; then
+task_start ".claude/CLAUDE.md"
+if [[ -f "$CLAUDE_DIR/CLAUDE.md" && $FORCE -eq 0 ]]; then
   CLAUDE_MD_KEPT=1
-  cp "$SRC_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.claude-engineering-lib"
+  cp "$SRC_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md.claude-engineering-lib"
   task_end MERGE
 else
-  cp "$SRC_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
+  cp "$SRC_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
   task_end DONE
 fi
 
@@ -170,9 +171,9 @@ if [[ -n "$SKIPPED" ]]; then
     "$(paint "$BADGE_WARN" ' INFO ')" "$SKIPPED" "$(paint 1 '--force')"
 fi
 if [[ $CLAUDE_MD_KEPT -eq 1 ]]; then
-  printf '  %s CLAUDE.md existant conservé : la version de la bibliothèque est dans %s, à fusionner.\n' \
-    "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 'CLAUDE.md.claude-engineering-lib')"
+  printf '  %s .claude/CLAUDE.md existant conservé : la version de la bibliothèque est dans %s, à fusionner.\n' \
+    "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 '.claude/CLAUDE.md.claude-engineering-lib')"
 fi
 echo
-printf '  %s Ouvre Claude Code ici, puis lance %s\n' "$(paint "$GREEN" '→')" "$(paint "1;$GREEN" '/workflow feature-development')"
+printf '  %s Ouvre Claude Code ici et décris ta tâche : %s\n' "$(paint "$GREEN" '→')" "$(paint "1;$GREEN" 'les agents se lancent tout seuls.')"
 printf '  %s %s\n\n' "$(paint "$GREEN" '★')" "$(paint "$GRAY" "github.com/${REPO}")"

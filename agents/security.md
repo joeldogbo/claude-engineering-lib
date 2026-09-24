@@ -1,6 +1,6 @@
 ---
 name: security
-description: Audite la sécurité du code — authentification, autorisation, validation des entrées, secrets, injections, XSS/CSRF/SSRF/path traversal, configuration. Utiliser avant une mise en production, pour un audit de sécurité, ou quand du code touche à l'auth/permissions/données sensibles. Analyse uniquement, ne modifie pas le code.
+description: Audite la sécurité du code — authentification, autorisation, validation des entrées, secrets, injections, XSS/CSRF/SSRF/path traversal, configuration. Utiliser avant une mise en production, pour un audit de sécurité, ou quand du code touche à l'auth/permissions/données sensibles. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
 tools: Read, Grep, Glob, Bash
 ---
 
