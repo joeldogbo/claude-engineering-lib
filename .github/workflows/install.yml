@@ -53,6 +53,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Tests de bout en bout
-        shell: ${{ matrix.shell }}
+      # `shell` n'accepte pas d'expression : une étape par shell.
+      - name: Tests de bout en bout (Windows PowerShell 5.1)
+        if: matrix.shell == 'powershell'
+        shell: powershell
+        run: ./.github/scripts/test-install.ps1
+
+      - name: Tests de bout en bout (PowerShell 7)
+        if: matrix.shell == 'pwsh'
+        shell: pwsh
         run: ./.github/scripts/test-install.ps1
