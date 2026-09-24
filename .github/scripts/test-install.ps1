@@ -80,3 +80,6 @@ if ($script:fails -gt 0) {
 }
 ""
 "Tous les controles sont passes."
+# Explicite : GitHub Actions termine l'etape par `exit $LASTEXITCODE`, qui vaut ici 1
+# (dernier installateur lance = cas d'erreur attendu).
+exit 0

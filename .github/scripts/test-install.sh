@@ -3,7 +3,7 @@
 # lancement via stdin (curl | bash) et cas d'erreur. Sort en 1 si un contrôle échoue.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 INSTALL="$PWD/install.sh"
 WORK="$(mktemp -d 2>/dev/null || mktemp -d -t install-test)"
 FAILS=0

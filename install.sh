@@ -179,7 +179,7 @@ for item in "${COPY_ITEMS[@]}"; do
     # laisse l'ancienne version intacte.
     rm -rf "$CLAUDE_DIR/$item.new"
     cp -R "$SRC_DIR/$item" "$CLAUDE_DIR/$item.new"
-    rm -rf "$CLAUDE_DIR/$item"
+    rm -rf "${CLAUDE_DIR:?}/${item:?}"
     mv "$CLAUDE_DIR/$item.new" "$CLAUDE_DIR/$item"
     task_end DONE
   fi
