@@ -1,14 +1,14 @@
 ---
 name: workflow
-description: Exécute un processus d'ingénierie structuré et réutilisable (développement de fonctionnalité, correction de bug, refactoring, audit de sécurité, optimisation de performance, revue de code, préparation de PR, analyse d'architecture, création d'API, migration de base de données, revue pré-production). Utiliser quand l'utilisateur veut suivre un processus connu plutôt qu'improviser, ou invoquer directement avec /workflow <nom>.
-argument-hint: [feature-development|bug-fix|refactoring|security-audit|performance-optimization|code-review|pr-preparation|architecture-analysis|api-design|db-migration|pre-production-review]
+description: Exécute un processus d'ingénierie structuré et réutilisable (développement de fonctionnalité, correction de bug, refactoring, audit de sécurité, audit de conformité, optimisation de performance, revue de code, préparation de PR, analyse d'architecture, création d'API, migration de base de données, revue pré-production). Utiliser quand l'utilisateur veut suivre un processus connu plutôt qu'improviser, ou invoquer directement avec /workflow <nom>.
+argument-hint: [feature-development|bug-fix|refactoring|security-audit|compliance-audit|performance-optimization|code-review|pr-preparation|architecture-analysis|api-design|db-migration|pre-production-review]
 ---
 
 # Routeur de workflows
 
 ## Instructions
 
-1. Déterminer quel workflow correspond à la demande parmi : `feature-development`, `bug-fix`, `refactoring`, `security-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`.
+1. Déterminer quel workflow correspond à la demande parmi : `feature-development`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`.
    - Si `$ARGUMENTS` désigne déjà un nom valide, l'utiliser directement.
    - Sinon, déduire le workflow le plus pertinent du contexte de la conversation.
 2. Lire le fichier correspondant dans `.claude/workflows/<nom>.md` (chemin relatif à la racine du projet).

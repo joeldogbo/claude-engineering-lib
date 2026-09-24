@@ -29,6 +29,10 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `debugging` | Méthodologie de reproduction/isolation/correction de bug | Implémentation |
 | `seo` | Référencement naturel : meta, données structurées, sitemap, robots.txt | Implémentation |
 | `geo` | Optimisation pour moteurs génératifs/IA : citabilité, llms.txt | Implémentation |
+| `compliance` | Orchestre un audit de conformité : répartit les axes, arbitre les fichiers partagés, consolide le rapport | Coordination |
+| `legal` | Pages légales : mentions, CGU, remboursement (jamais d'avis juridique) | Implémentation |
+| `privacy` | Données personnelles : inventaire, minimisation, droits, politique de confidentialité | Implémentation |
+| `consent` | Cookies et traceurs : inventaire, blocage préalable, bandeau, politique de cookies | Implémentation |
 
 ## Skills (`skills/`)
 
@@ -39,6 +43,7 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `architecture-review` | Checklist d'analyse architecturale |
 | `code-quality` | Checklist de revue de code (lisibilité, dette technique...) |
 | `refactoring-guide` | Méthodologie de refactoring sûr |
+| `compliance-audit` | Checklist de conformité d'un site (pages légales, données personnelles, consentement) — ne remplace pas un juriste |
 | `performance-audit` | Checklist de performance (CPU, mémoire, réseau, cache) |
 | `security-audit` | Checklist de sécurité (OWASP, auth, secrets) |
 | `database-design` | Checklist de conception BDD (index, normalisation, transactions) |
@@ -61,7 +66,7 @@ Fiches de référence condensées, lues à la demande par les agents/skills : `s
 
 ## Workflows (`workflows/`)
 
-Invocables via `/workflow <nom>` : `feature-development`, `bug-fix`, `refactoring`, `security-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`.
+Invocables via `/workflow <nom>` : `feature-development`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`.
 
 ## Étendre la bibliothèque
 
