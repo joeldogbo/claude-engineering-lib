@@ -15,3 +15,6 @@ desktop.ini
 # Fichiers temporaires
 *.tmp
 *.bak
+
+# Copie locale d'une installation, pour inspection : jamais publiée
+donnes/
