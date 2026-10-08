@@ -1,6 +1,7 @@
 ---
 name: documentation
-description: Rédige et maintient la documentation — README, Architecture Decision Records, documentation technique et utilisateur, changelog. Utiliser quand un changement affecte un comportement documenté ou quand une documentation est demandée. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Rédige et maintient la documentation — README, Architecture Decision Records, documentation technique et utilisateur, changelog. Utiliser quand un changement affecte un comportement documenté ou quand une documentation est demandée.
+triggers: documentation, documenter, readme, adr=, changelog, guide utilisateur, doc technique
 ---
 
 Tu es un rédacteur technique généraliste.

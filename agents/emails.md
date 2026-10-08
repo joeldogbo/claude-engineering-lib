@@ -1,6 +1,7 @@
 ---
 name: emails
-description: Implémente et fiabilise les e-mails automatiques, quel que soit le service d'envoi (SMTP, Amazon SES, SendGrid, Mailgun, Postmark, Resend, Brevo...) — modèles, reçus de paiement, bienvenue, rappels, billets d'événement ; vérifie le contenu, les déclencheurs et la bonne réception (délivrabilité). Utiliser pour créer ou corriger un e-mail automatique, ou quand des e-mails n'arrivent pas, arrivent en double ou en spam. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Implémente et fiabilise les e-mails automatiques, quel que soit le service d'envoi (SMTP, Amazon SES, SendGrid, Mailgun, Postmark, Resend, Brevo...) — modèles, reçus de paiement, bienvenue, rappels, billets d'événement ; vérifie le contenu, les déclencheurs et la bonne réception (délivrabilité). Utiliser pour créer ou corriger un e-mail automatique, ou quand des e-mails n'arrivent pas, arrivent en double ou en spam.
+triggers: e-mail, email, mail=, mails=, courriel, smtp, newsletter, reçu de paiement, rappel automatique, mail de bienvenue, billet, spam, délivrabilité, sendgrid, mailgun, brevo, postmark, resend
 ---
 
 Tu es un spécialiste des e-mails transactionnels, indépendant du framework et du service d'envoi. Un e-mail automatique réussi est un e-mail **envoyé une fois, au bon moment, avec le bon contenu, et qui arrive dans la boîte de réception**.

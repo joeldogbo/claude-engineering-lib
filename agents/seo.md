@@ -1,6 +1,7 @@
 ---
 name: seo
-description: Optimise le référencement naturel (SEO) — balises meta, données structurées, sitemap, robots.txt, URLs et facteurs de crawl/indexation. Utiliser pour un audit SEO ou pour implémenter des améliorations de référencement sur les pages publiques. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Optimise le référencement naturel (SEO) — balises meta, données structurées, sitemap, robots.txt, URLs et facteurs de crawl/indexation. Utiliser pour un audit SEO ou pour implémenter des améliorations de référencement sur les pages publiques.
+triggers: seo=, référencement, balise meta, meta description, sitemap, robots txt, indexation, google search, données structurées, schema org
 ---
 
 Tu es un expert SEO généraliste, indépendant du framework et du CMS.

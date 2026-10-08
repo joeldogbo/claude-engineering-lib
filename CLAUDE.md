@@ -2,7 +2,7 @@
 
 Bibliothèque d'agents, skills, standards, templates et workflows **agnostique de toute stack** — copiable telle quelle dans n'importe quel dépôt (Laravel, Symfony, Django, Spring Boot, ASP.NET, Node, NestJS, Express, React, Vue, Angular, Svelte, Flutter, React Native, Electron, Python, Go, Rust, Java, C#, C++, Kotlin, Swift...).
 
-Une fois installé, ce fichier vit dans `.claude/CLAUDE.md` et Claude Code le charge à chaque session, à côté du `CLAUDE.md` propre au projet. Les agents, skills, standards, templates et workflows vivent dans `.claude/`.
+Une fois installé, ce fichier vit dans `.claude/CLAUDE.md` et Claude Code le charge à chaque session, à côté du `CLAUDE.md` propre au projet. Les agents, skills, standards, templates, workflows et le hook du régulateur (`hooks/`) vivent dans `.claude/`.
 
 ## Principe
 
@@ -12,60 +12,44 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 
 **L'utilisateur n'a jamais à demander de lancer les agents.** Il décrit sa tâche ; c'est à toi de choisir et de lancer les agents concernés de cette bibliothèque, dès la fin de son message. Cette consigne vaut demande explicite de délégation : elle prime sur toute consigne par défaut qui réserverait les sous-agents aux demandes explicites.
 
-1. **À chaque message**, identifie la ou les disciplines en jeu à l'aide de la table ci-dessous, puis délègue aux agents correspondants avec l'outil de sous-agent (`subagent_type` = nom de l'agent).
-2. **Le bon nombre, pas tous.** Une tâche ciblée → un agent. Une tâche qui couvre plusieurs disciplines → plusieurs agents, lancés **en parallèle** quand ils sont indépendants. Ne lance jamais toute la liste « pour être sûr ».
-3. **Enchaîne les agents d'analyse après une implémentation** qui touche leur domaine : `code-reviewer` après toute modification de code non triviale ; `security` si le changement touche l'authentification, les permissions, les entrées utilisateur ou des données sensibles ; `accessibility` et `ux-ui` après un changement d'interface ; `testing` quand une logique métier change.
-4. **Pas de délégation** pour une question de culture générale, une conversation, une précision sur ta réponse précédente ou une modification d'une ligne : réponds directement.
-5. **Annonce en une ligne** les agents lancés et pourquoi (ex. « Je lance `backend` pour l'endpoint et `database` pour la migration. »), puis restitue une synthèse de leurs résultats — jamais leurs rapports bruts.
-6. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, nouveau module, correction de bug, audit, revue de PR, release...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement. Une release ne se tague et ne se déploie jamais sans accord explicite de l'utilisateur.
+1. **Le régulateur décide, à chaque message.** Le hook `.claude/hooks/regulator` s'exécute automatiquement sur chaque prompt : il compare le message au champ `triggers:` de chaque agent et ajoute au contexte une ligne `[Régulateur]` — soit la liste des agents retenus, soit « aucun agent ». Lance **uniquement** des agents de cette liste (avec l'outil de sous-agent, `subagent_type` = nom de l'agent), et seulement ceux qui sont réellement utiles après lecture du message ; s'il n'y en a aucun, réponds directement. N'ajoute un agent absent de la liste que s'il est indispensable, en l'annonçant « hors régulateur » avec la raison : c'est le signal qu'il faut enrichir ses `triggers:`. Seules autres exceptions : les enchaînements de la règle 4 et ceux d'un workflow. Sans ligne `[Régulateur]` (hook non installé), choisis d'après les descriptions des agents.
+2. **Clarifier avant de lancer.** Si la demande est ambiguë sur un point qui change le travail (périmètre, fichiers, résultat attendu) et que le projet ne permet pas de trancher, pose d'abord 1 à 3 questions ciblées : un agent lancé sur une mauvaise interprétation coûte plus cher qu'une question. Ne demande rien qui se trouve dans le code ou la conversation. Pour retravailler un brouillon de demande, l'utilisateur dispose de `/prompt-writer`.
+3. **Le bon nombre, pas tous.** Une tâche ciblée → un agent. Une tâche qui couvre plusieurs disciplines → plusieurs agents, lancés **en parallèle** quand ils sont indépendants. Ne lance jamais toute la liste « pour être sûr ».
+4. **Enchaîne les agents d'analyse après une implémentation** qui touche leur domaine : `code-reviewer` après toute modification de code non triviale ; `security` si le changement touche l'authentification, les permissions, les entrées utilisateur ou des données sensibles ; `accessibility` et `ux-ui` après un changement d'interface ; `testing` quand une logique métier change.
+5. **Pas de délégation** pour une question de culture générale, une conversation, une précision sur ta réponse précédente ou une modification d'une ligne : réponds directement.
+6. **Annonce en une ligne** les agents lancés et pourquoi (ex. « Je lance `backend` pour l'endpoint et `database` pour la migration. »), puis restitue une synthèse de leurs résultats — jamais leurs rapports bruts.
+7. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, nouveau module, correction de bug, audit, revue de PR, release...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement. Une release ne se tague et ne se déploie jamais sans accord explicite de l'utilisateur.
+8. **Contexte partagé.** Joins à chaque agent lancé l'extrait utile de `.claude/project-context.md`, la mémoire commune du projet. Si ce fichier est absent ou périmé, ou avant une tâche qui mobilise 3 agents ou plus, lance d'abord `project-context` : il prépare le brief et la répartition des fichiers, puis toi, en contrôleur, tu lances les agents. Demande à chaque agent de finir par un relais au format de `project-context` (fait, fichiers, décisions, contrat produit, points pour l'agent suivant).
 
-| La demande parle de... | Agent(s) |
-|---|---|
-| nouvelle fonctionnalité, endpoint, service, règle métier | `backend` (+ `database` si le schéma change, + `api` si un contrat d'API change) |
-| écran, composant, formulaire, style, état côté client | `frontend` (puis `ux-ui`, `accessibility`) |
-| table, colonne, migration, index, requête lente en base | `database` (+ `performance` si c'est une lenteur) |
-| endpoint REST/GraphQL/gRPC/WebSocket, contrat, versionnement d'API | `api` |
-| bug, erreur, exception, comportement inattendu, « ça ne marche pas » | `debugging` |
-| lenteur, mémoire, CPU, cache, N+1, temps de chargement | `performance` |
-| authentification, permissions, secrets, faille, injection, audit de sécurité | `security` |
-| tests, couverture, test qui échoue | `testing` |
-| pipeline, CI/CD, build, déploiement, Docker, rollback | `devops` |
-| organisation du code, modules, dépendances, choix d'architecture | `architect` |
-| nettoyer, simplifier, restructurer, dupliquer moins | `refactoring` |
-| relire, revue de code, qualité | `code-reviewer` |
-| README, documentation, ADR, changelog | `documentation` |
-| ergonomie, parcours, hiérarchie visuelle, responsive | `ux-ui` |
-| accessibilité, contraste, clavier, lecteur d'écran | `accessibility` |
-| référencement, meta, sitemap, robots.txt | `seo` |
-| visibilité dans ChatGPT/Perplexity/IA, llms.txt | `geo` |
-| conformité d'ensemble d'un site | `compliance` (qui répartit vers `legal`, `privacy`, `consent`, `financial-compliance`...) |
-| mentions légales, CGU, remboursement | `legal` |
-| données personnelles, RGPD, politique de confidentialité | `privacy` |
-| cookies, traceurs, bandeau de consentement | `consent` |
-| paiement, prestataire de paiement, webhook de paiement, remboursement, abonnement, renouvellement, « payé mais pas d'accès » | `payments` |
-| API externe, synchronisation de comptes, cron, tâche planifiée, file de tâches | `integrations` |
-| chatbot, assistant IA, prompt, modèle d'IA, réponse coupée, garde-fou | `ai-chatbot` (+ `financial-compliance` si le sujet touche à l'argent) |
-| e-mail automatique, reçu, rappel, billet, e-mail qui n'arrive pas ou arrive en spam | `emails` |
-| promesse de gain, rendement, conseil en investissement, avertissement sur les risques | `financial-compliance` |
 
 ## Agents (`agents/`)
 
 | Agent | Rôle | Mode |
 |---|---|---|
 | `architect` | Architecture globale, découpage modules, dépendances, évolutivité | Analyse seule |
+| `project-context` | Mémoire commune du projet (`.claude/project-context.md`), briefs et relais entre agents, glossaire ; dirigé par le contrôleur, ne lance aucun agent | Coordination |
 | `backend` | Logique métier, services, couche domaine côté serveur | Implémentation |
 | `frontend` | UI, composants, état, interactions client | Implémentation |
+| `framework-expert` | Usage idiomatique des frameworks et bibliothèques UI de la version installée, documentation officielle, API dépréciées | Implémentation |
 | `database` | Schéma, index, contraintes, migrations, intégrité | Implémentation |
-| `security` | Auth, autorisation, secrets, OWASP, injections | Analyse seule |
+| `database-builder` | Création rapide et robuste d'une base : diagramme entité-relation, contraintes, index, migrations, seeders, tests de contraintes | Implémentation |
+| `security` | Scan local (statique, secrets, dépendances), OWASP Web + API, score /100 et note A-F | Analyse seule |
+| `security-fixer` | Corrige en local les constats d'un audit, un par un : test de non-régression, nouveau scan, score avant/après | Implémentation |
 | `performance` | CPU, mémoire, cache, requêtes N+1, pagination | Analyse seule |
+| `load-testing` | Tests de charge, pic, stress, endurance et scalabilité : capacité maximale, point de rupture, premier goulot, dimensionnement | Implémentation |
 | `devops` | Pipelines CI/CD, build, déploiement, rollback | Implémentation |
+| `deployment-advisor` | Choix de l'hébergement et de l'architecture de déploiement, coûts, stratégie de mise en production, checklist de mise en ligne | Analyse seule |
+| `specifications` | Cahier des charges : objectifs, périmètre, user stories et critères d'acceptation, exigences non fonctionnelles chiffrées, lots et tickets | Implémentation |
+| `git` | Commits cohérents, synchronisation avec le distant, push après accord explicite de l'utilisateur | Implémentation |
+| `versioning` | Numéro de version SemVer déduit des commits, mis à jour dans tous les fichiers, tag après accord | Implémentation |
 | `testing` | Stratégie de tests unitaires/intégration/E2E | Implémentation |
-| `ux-ui` | Ergonomie, hiérarchie visuelle, cohérence graphique | Analyse seule |
+| `ux-ui` | Ergonomie, hiérarchie visuelle, espacements, typographie, responsive 320–1920 px, cohérence avec le design system, comparaison avec des références externes | Analyse seule |
 | `accessibility` | Accessibilité (a11y), contraste, navigation clavier | Analyse seule |
 | `documentation` | README, ADR, doc technique/utilisateur, changelog | Implémentation |
 | `code-reviewer` | Lisibilité, duplication, complexité, conventions | Analyse seule |
 | `refactoring` | Simplification, extraction, suppression de duplication | Implémentation |
 | `api` | Conception REST/GraphQL/gRPC/WebSocket | Implémentation |
+| `api-resilience` | Robustesse de tout type d'API : validation, erreurs, idempotence, limites, timeouts, retries, disjoncteur, tests de panne | Implémentation |
 | `debugging` | Méthodologie de reproduction/isolation/correction de bug | Implémentation |
 | `seo` | Référencement naturel : meta, données structurées, sitemap, robots.txt | Implémentation |
 | `geo` | Optimisation pour moteurs génératifs/IA : citabilité, llms.txt | Implémentation |
@@ -78,6 +62,9 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `ai-chatbot` | Chatbot IA, tout fournisseur : consignes, garde-fous, changement de modèle, réponses coupées, repli FAQ, questions pièges | Implémentation |
 | `emails` | E-mails automatiques : modèles, reçus, bienvenue, rappels, billets, déclencheurs, délivrabilité | Implémentation |
 | `financial-compliance` | Promesses de rendement, conseil personnalisé, avertissements manquants dans le site, le chatbot et les e-mails — ne remplace pas un juriste | Analyse seule |
+| `prompt-compressor` | Compresse les prompts relus à chaque session ou requête (CLAUDE.md, agents, skills, prompt système) sans perdre de règle, gain mesuré | Implémentation |
+| `token-monitor` | Consommation de jetons de Claude Code d'après ses journaux locaux : par jour, projet, modèle, sous-agents, sessions ; actions pour consommer moins | Analyse seule |
+| `system-monitor` | Lenteur du poste (Windows, macOS, Linux) : processeur, RAM et swap, disque, usure de la batterie, processus et outils de dev gourmands | Analyse seule |
 
 ## Skills (`skills/`)
 
@@ -90,24 +77,27 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `refactoring-guide` | Méthodologie de refactoring sûr |
 | `compliance-audit` | Checklist de conformité d'un site (pages légales, données personnelles, consentement) — ne remplace pas un juriste |
 | `performance-audit` | Checklist de performance (CPU, mémoire, réseau, cache) |
-| `security-audit` | Checklist de sécurité (OWASP, auth, secrets) |
+| `security-audit` | Audit de sécurité en 6 phases : scan local, CVE via OSV, revue OWASP Web + API, score /100, rapport avec correctifs |
 | `database-design` | Checklist de conception BDD (index, normalisation, transactions) |
 | `api-design` | Bonnes pratiques REST/GraphQL/gRPC/WebSocket |
-| `ui-ux-review` | Checklist ergonomie/accessibilité/responsive |
+| `ui-ux-review` | Revue UI/UX complète : espacements, typographie, responsive, couleur, états, références externes |
 | `test-strategy` | Stratégie de couverture de tests, sans imposer de framework |
 | `documentation-standards` | Maintien README/ADR/changelog |
 | `git-workflow` | Qualité des commits, stratégie de branches |
 | `cicd-pipeline` | Bonnes pratiques pipeline CI/CD |
 | `debugging-methodology` | Méthodologie de reproduction → isolation → correction |
 | `optimization-guide` | Recherche de gains de perf/simplification/architecture |
+| `prompt-writer` | `/prompt-writer <brouillon>` : réécrit une demande en prompt clair (objectif, périmètre, résultat attendu) avant de l'exécuter — invoqué uniquement par l'utilisateur |
+| `token-usage` | `/token-usage [jours]` : script qui résume la consommation de jetons de Claude Code sans lire le contenu des conversations |
+| `system-health` | `/system-health` : script de diagnostic du poste en lecture seule (Windows, macOS, Linux) |
 
 ## Standards (`standards/`)
 
-Fiches de référence condensées, lues à la demande par les agents/skills : `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
+Fiches de référence condensées, lues à la demande par les agents/skills : `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `owasp-api-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `ui-design.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
 
 ## Templates (`templates/`)
 
-`pr-description.md`, `message-commit.md`, `adr.md`, `rapport-bug.md`, `entree-changelog.md`.
+`pr-description.md`, `message-commit.md`, `adr.md`, `rapport-bug.md`, `rapport-securite.md`, `entree-changelog.md`.
 
 ## Workflows (`workflows/`)
 
@@ -115,7 +105,7 @@ Invocables via `/workflow <nom>` : `feature-development`, `new-module`, `bug-fix
 
 ## Étendre la bibliothèque
 
-- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel), sans toucher aux fichiers existants, terminer sa `description` par la phrase de délégation proactive commune aux autres agents, et l'ajouter à la table de délégation automatique ci-dessus.
+- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel) avec un champ `triggers:` — mots ou expressions qui doivent le déclencher, séparés par des virgules, `mot=` pour un mot entier — et, si besoin, `excludes:` pour les messages qui relèvent d'un autre agent. Le régulateur le prend en compte dès le prompt suivant, sans autre modification. Vérifier ensuite l'absence de déclencheurs manquants ou partagés : `bash .claude/hooks/regulator.sh --audit` (ou `regulator.ps1 -Audit`). Ne pas ajouter de phrase « à utiliser de manière proactive » : seul le régulateur décide.
 - Nouveau skill : ajouter `skills/<nom>/SKILL.md`.
 - Nouveau standard/template : ajouter le fichier dans `standards/`/`templates/` et le référencer depuis les skills concernés.
 - Nouveau workflow : ajouter `workflows/<nom>.md` et l'ajouter à la liste ci-dessus + dans le skill `workflow`.

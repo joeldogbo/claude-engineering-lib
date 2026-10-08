@@ -1,0 +1,50 @@
+name: Régulateur
+
+# Vérifie les décisions du régulateur (bash et PowerShell, qui doivent concorder) et qu'aucun
+# agent n'est sans déclencheurs — à chaque modification d'un agent ou du hook.
+on:
+  push:
+    branches: [main]
+    paths:
+      - hooks/**
+      - agents/**
+      - .github/scripts/test-regulator.py
+      - .github/workflows/regulator.yml
+  pull_request:
+    paths:
+      - hooks/**
+      - agents/**
+      - .github/scripts/test-regulator.py
+      - .github/workflows/regulator.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regulator:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: ShellCheck
+        if: runner.os == 'Linux'
+        run: shellcheck -S warning hooks/regulator.sh
+
+      - name: Décisions du régulateur (bash et pwsh)
+        if: runner.os != 'Windows'
+        run: python .github/scripts/test-regulator.py bash pwsh
+
+      - name: Décisions du régulateur (bash, Windows PowerShell 5.1 et pwsh)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python .github/scripts/test-regulator.py bash powershell pwsh

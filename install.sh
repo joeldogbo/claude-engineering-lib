@@ -7,6 +7,7 @@
 #   curl -fsSL .../install.sh | bash -s -- --force        # écrase les fichiers existants
 #   curl -fsSL .../install.sh | bash -s -- --version v1.2.0
 #   curl -fsSL .../install.sh | bash -s -- --dir ./mon-projet
+#   bash install.sh --source ./claude-engineering-lib   # depuis une copie locale (tests, CI)
 
 set -euo pipefail
 
@@ -126,43 +127,54 @@ trap cleanup EXIT
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --force) FORCE=1; shift ;;
-    --version|--dir)
+    --version|--dir|--source)
       if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then die "L'option $1 attend une valeur."; fi
-      if [[ "$1" == "--version" ]]; then VERSION="$2"; else TARGET_DIR="$2"; fi
+      case "$1" in
+        --version) VERSION="$2" ;;
+        --dir) TARGET_DIR="$2" ;;
+        --source) SOURCE="$2" ;;
+      esac
       shift 2 ;;
-    *) die "Option inconnue : $1 (options : --force, --version <tag>, --dir <dossier>)." ;;
+    *) die "Option inconnue : $1 (options : --force, --version <tag>, --dir <dossier>, --source <copie locale>)." ;;
   esac
 done
 
-command -v curl >/dev/null 2>&1 || die "curl est requis : installe-le avec le gestionnaire de paquets du système."
-command -v tar  >/dev/null 2>&1 || die "tar est requis : installe-le avec le gestionnaire de paquets du système."
-
-if [[ -z "$VERSION" ]]; then
-  VERSION="$(resolve_latest)" || die "Impossible de joindre GitHub pour trouver la dernière version (connexion, proxy ?)."
-fi
-
-if [[ "$VERSION" == "main" ]]; then
-  banner "main"
-  ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
-  task_start "Téléchargement" "main"
-elif [[ -n "$VERSION" ]]; then
-  banner "$VERSION"
-  ARCHIVE_URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
-  task_start "Téléchargement" "$VERSION"
+if [[ -n "${SOURCE:-}" ]]; then
+  # Installation depuis une copie locale de la bibliothèque (tests, CI, dépôt cloné).
+  [[ -f "$SOURCE/CLAUDE.md" && -d "$SOURCE/agents" ]] || die "$SOURCE n'est pas une copie de la bibliothèque."
+  banner "copie locale"
+  SRC_DIR="$(cd "$SOURCE" && pwd)"
 else
-  banner "main"
-  ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
-  task_start "Téléchargement" "main (aucune release)"
+  command -v curl >/dev/null 2>&1 || die "curl est requis : installe-le avec le gestionnaire de paquets du système."
+  command -v tar  >/dev/null 2>&1 || die "tar est requis : installe-le avec le gestionnaire de paquets du système."
+
+  if [[ -z "$VERSION" ]]; then
+    VERSION="$(resolve_latest)" || die "Impossible de joindre GitHub pour trouver la dernière version (connexion, proxy ?)."
+  fi
+
+  if [[ "$VERSION" == "main" ]]; then
+    banner "main"
+    ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
+    task_start "Téléchargement" "main"
+  elif [[ -n "$VERSION" ]]; then
+    banner "$VERSION"
+    ARCHIVE_URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
+    task_start "Téléchargement" "$VERSION"
+  else
+    banner "main"
+    ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
+    task_start "Téléchargement" "main (aucune release)"
+  fi
+
+  TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t claude-engineering-lib)"
+  download "$ARCHIVE_URL" "$TMP_DIR/lib.tar.gz" || die "Téléchargement impossible : $ARCHIVE_URL"
+  tar -xzf "$TMP_DIR/lib.tar.gz" -C "$TMP_DIR" || die "Extraction de l'archive impossible."
+  task_end DONE
+  echo
+  SRC_DIR="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 fi
 
-TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t claude-engineering-lib)"
-download "$ARCHIVE_URL" "$TMP_DIR/lib.tar.gz" || die "Téléchargement impossible : $ARCHIVE_URL"
-tar -xzf "$TMP_DIR/lib.tar.gz" -C "$TMP_DIR" || die "Extraction de l'archive impossible."
-task_end DONE
-echo
-SRC_DIR="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-
-COPY_ITEMS=(agents skills standards templates workflows)
+COPY_ITEMS=(agents skills standards templates workflows hooks)
 SKIPPED=""
 CLAUDE_DIR="$TARGET_DIR/.claude"
 mkdir -p "$CLAUDE_DIR"
@@ -196,6 +208,49 @@ else
   task_end DONE
 fi
 
+# Hook du régulateur dans .claude/settings.json : ajouté à l'existant, sans rien écraser.
+# Sans outil capable de fusionner du JSON (python3, jq), la configuration est mise à côté.
+HOOK_MERGE=""
+# Premier Python 3 qui fonctionne vraiment : sous Windows, « python3 » peut n'être qu'un raccourci du Microsoft Store.
+PY=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys; sys.exit(sys.version_info[0] != 3)' >/dev/null 2>&1; then
+    PY="$candidate"; break
+  fi
+done
+if [[ -f "$SRC_DIR/hooks/regulator.sh" ]]; then
+  SETTINGS="$CLAUDE_DIR/settings.json"
+  # shellcheck disable=SC2016  # ${CLAUDE_PROJECT_DIR} est développé par Claude Code, pas par ce script.
+  HOOK='{"type": "command", "command": "bash", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.sh"], "timeout": 30}'
+  task_start ".claude/settings.json" "(régulateur)"
+  if [[ ! -f "$SETTINGS" ]]; then
+    printf '{\n  "hooks": {\n    "UserPromptSubmit": [\n      { "hooks": [%s] }\n    ]\n  }\n}\n' "$HOOK" >"$SETTINGS"
+    task_end DONE
+  elif grep -Eq 'regulator\.(sh|ps1)' "$SETTINGS"; then
+    task_end SKIP
+  elif [[ -n "$PY" ]] && "$PY" - "$SETTINGS" "$HOOK" <<'PY' 2>/dev/null
+import json, sys
+path, hook = sys.argv[1], json.loads(sys.argv[2])
+with open(path, encoding="utf-8") as fh:
+    settings = json.load(fh)
+settings.setdefault("hooks", {}).setdefault("UserPromptSubmit", []).append({"hooks": [hook]})
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(settings, fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
+PY
+  then
+    task_end DONE
+  elif command -v jq >/dev/null 2>&1 && jq --argjson h "$HOOK" '.hooks.UserPromptSubmit += [{"hooks": [$h]}]' "$SETTINGS" >"$SETTINGS.new" 2>/dev/null; then
+    mv "$SETTINGS.new" "$SETTINGS"
+    task_end DONE
+  else
+    rm -f "$SETTINGS.new"
+    HOOK_MERGE="$CLAUDE_DIR/settings.regulator.json"
+    printf '{\n  "hooks": {\n    "UserPromptSubmit": [\n      { "hooks": [%s] }\n    ]\n  }\n}\n' "$HOOK" >"$HOOK_MERGE"
+    task_end MERGE
+  fi
+fi
+
 echo
 printf '  %s Bibliothèque installée dans %s\n' "$(paint "$BADGE_OK" ' SUCCESS ')" "$(paint 1 "$TARGET_DIR")"
 if [[ -n "$SKIPPED" ]]; then
@@ -205,6 +260,10 @@ fi
 if [[ $CLAUDE_MD_KEPT -eq 1 ]]; then
   printf '  %s .claude/CLAUDE.md existant conservé : la version de la bibliothèque est dans %s, à fusionner.\n' \
     "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 '.claude/CLAUDE.md.claude-engineering-lib')"
+fi
+if [[ -n "$HOOK_MERGE" ]]; then
+  printf '  %s .claude/settings.json laissé intact : le hook du régulateur est dans %s, à fusionner.\n' \
+    "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 '.claude/settings.regulator.json')"
 fi
 echo
 printf '  %s Ouvre Claude Code ici et décris ta tâche : %s\n' "$(paint "$GREEN" '→')" "$(paint "1;$GREEN" 'les agents se lancent tout seuls.')"

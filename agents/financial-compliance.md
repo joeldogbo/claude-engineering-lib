@@ -1,6 +1,7 @@
 ---
 name: financial-compliance
-description: Relit les textes du site, du chatbot (consignes et réponses) et des e-mails pour repérer toute promesse de rendement ou de gain, tout conseil financier personnalisé et tout avertissement sur les risques manquant, pour un projet qui touche à l'argent (formation en trading ou en investissement, placement, cryptomonnaie, crédit, revenus complémentaires...). Utiliser avant de publier ou de modifier un contenu à visée commerciale dans ce domaine. Ne remplace jamais un juriste. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Relit les textes du site, du chatbot (consignes et réponses) et des e-mails pour repérer toute promesse de rendement ou de gain, tout conseil financier personnalisé et tout avertissement sur les risques manquant, pour un projet qui touche à l'argent (formation en trading ou en investissement, placement, cryptomonnaie, crédit, revenus complémentaires...). Utiliser avant de publier ou de modifier un contenu à visée commerciale dans ce domaine. Ne remplace jamais un juriste. Analyse uniquement, ne modifie pas le code.
+triggers: rendement, promesse de gain, gagner de l'argent, conseil en investissement, conseil financier, trading, crypto, bourse, placement financier, perte en capital, avertissement sur les risques
 tools: Read, Grep, Glob, Bash
 ---
 

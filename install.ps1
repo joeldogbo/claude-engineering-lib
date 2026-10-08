@@ -9,6 +9,7 @@
 #
 # Ou en local:
 #   .\install.ps1 -Force -Version v1.2.0 -TargetDir .
+#   .\install.ps1 -Source .\claude-engineering-lib    # depuis une copie locale (tests, CI)
 #
 # Ce fichier doit rester en ASCII pur : sous Windows PowerShell 5.1, `iwr | iex` ne
 # decode pas le script en UTF-8 et corrompt tout caractere accentue. Les accents et
@@ -17,7 +18,9 @@
 param(
     [switch]$Force,
     [string]$Version = "",
-    [string]$TargetDir = (Get-Location).Path
+    [string]$TargetDir = (Get-Location).Path,
+    # Copie locale de la bibliotheque a installer a la place du telechargement (tests, CI, depot clone).
+    [string]$Source = ""
 )
 
 # Resultat lu apres le bloc : un echec ne ferme jamais la fenetre de l'utilisateur
@@ -142,35 +145,43 @@ $__claudeLibInstall = @{ Failed = $false }
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
 
     try {
-        if (-not (Get-Command tar -ErrorAction SilentlyContinue)) {
-            throw "La commande tar est introuvable. Sous Windows, elle est fournie a partir de Windows 10 version 1803."
-        }
-        if (-not $Version) { $Version = Resolve-LatestVersion }
-
-        if ($Version -eq 'main') {
-            Show-Banner "main"
-            $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.tar.gz"
-            Write-TaskStart "T${e}l${e}chargement" "main"
-        } elseif ($Version) {
-            Show-Banner $Version
-            $archiveUrl = "https://github.com/$Repo/archive/refs/tags/$Version.tar.gz"
-            Write-TaskStart "T${e}l${e}chargement" $Version
+        if ($Source) {
+            if (-not ((Test-Path (Join-Path $Source 'CLAUDE.md')) -and (Test-Path (Join-Path $Source 'agents')))) {
+                throw "$Source n'est pas une copie de la biblioth${eg}que."
+            }
+            Show-Banner "copie locale"
+            $srcDir = Get-Item (Resolve-Path $Source).Path
         } else {
-            Show-Banner "main"
-            $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.tar.gz"
-            Write-TaskStart "T${e}l${e}chargement" "main (aucune release)"
+            if (-not (Get-Command tar -ErrorAction SilentlyContinue)) {
+                throw "La commande tar est introuvable. Sous Windows, elle est fournie a partir de Windows 10 version 1803."
+            }
+            if (-not $Version) { $Version = Resolve-LatestVersion }
+
+            if ($Version -eq 'main') {
+                Show-Banner "main"
+                $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.tar.gz"
+                Write-TaskStart "T${e}l${e}chargement" "main"
+            } elseif ($Version) {
+                Show-Banner $Version
+                $archiveUrl = "https://github.com/$Repo/archive/refs/tags/$Version.tar.gz"
+                Write-TaskStart "T${e}l${e}chargement" $Version
+            } else {
+                Show-Banner "main"
+                $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.tar.gz"
+                Write-TaskStart "T${e}l${e}chargement" "main (aucune release)"
+            }
+
+            New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+            $archivePath = Join-Path $tmpDir "lib.tar.gz"
+            Invoke-Download $archiveUrl $archivePath
+            tar -xzf $archivePath -C $tmpDir
+            if ($LASTEXITCODE -ne 0) { throw "Extraction de l'archive impossible (tar a ${e}chou${e})." }
+            Write-TaskEnd 'DONE'
+            Write-Host ""
+
+            $srcDir = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
         }
-
-        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
-        $archivePath = Join-Path $tmpDir "lib.tar.gz"
-        Invoke-Download $archiveUrl $archivePath
-        tar -xzf $archivePath -C $tmpDir
-        if ($LASTEXITCODE -ne 0) { throw "Extraction de l'archive impossible (tar a ${e}chou${e})." }
-        Write-TaskEnd 'DONE'
-        Write-Host ""
-
-        $srcDir = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
-        $copyItems = @("agents", "skills", "standards", "templates", "workflows")
+        $copyItems = @("agents", "skills", "standards", "templates", "workflows", "hooks")
         $skipped = @()
         $ClaudeDir = Join-Path $TargetDir ".claude"
         New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
@@ -208,6 +219,43 @@ $__claudeLibInstall = @{ Failed = $false }
             Write-TaskEnd 'DONE'
         }
 
+        # Hook du regulateur dans .claude/settings.json : ajoute a l'existant, sans rien ecraser.
+        # Un fichier illisible n'est jamais reecrit : la configuration a ajouter est mise a cote.
+        $hookMerge = $null
+        if (Test-Path (Join-Path $srcDir.FullName 'hooks/regulator.ps1')) {
+            $settingsPath = Join-Path $ClaudeDir 'settings.json'
+            $shellExe = if ($PSVersionTable.PSEdition -eq 'Core' -and -not $IsWindows) { 'pwsh' } else { 'powershell' }
+            $hook = [pscustomobject]@{
+                type    = 'command'
+                command = $shellExe
+                args    = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.ps1')
+                timeout = 30
+            }
+            $entry = [pscustomobject]@{ hooks = @($hook) }
+            Write-TaskStart ".claude/settings.json" "(r${e}gulateur)"
+            if (-not (Test-Path $settingsPath)) {
+                $settings = [pscustomobject]@{ hooks = [pscustomobject]@{ UserPromptSubmit = @($entry) } }
+                [IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject $settings -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                Write-TaskEnd 'DONE'
+            } elseif ([IO.File]::ReadAllText($settingsPath) -match 'regulator\.(ps1|sh)') {
+                Write-TaskEnd 'SKIP'
+            } else {
+                try {
+                    $settings = [IO.File]::ReadAllText($settingsPath) | ConvertFrom-Json
+                    if (-not $settings.hooks) { $settings | Add-Member -NotePropertyName hooks -NotePropertyValue ([pscustomobject]@{}) }
+                    $existing = @($settings.hooks.UserPromptSubmit | Where-Object { $_ })
+                    $settings.hooks | Add-Member -NotePropertyName UserPromptSubmit -NotePropertyValue (@($existing) + $entry) -Force
+                    [IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject $settings -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                    Write-TaskEnd 'DONE'
+                } catch {
+                    $hookMerge = Join-Path $ClaudeDir 'settings.regulator.json'
+                    $snippet = [pscustomobject]@{ hooks = [pscustomobject]@{ UserPromptSubmit = @($entry) } }
+                    [IO.File]::WriteAllText($hookMerge, (ConvertTo-Json -InputObject $snippet -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                    Write-TaskEnd 'MERGE'
+                }
+            }
+        }
+
         Write-Host ""
         Write-Host ("  " + (Paint " SUCCESS " $BadgeOk) + " Biblioth${eg}que install${e}e dans " + (Paint $TargetDir '1'))
         if ($skipped) {
@@ -215,6 +263,9 @@ $__claudeLibInstall = @{ Failed = $false }
         }
         if ($claudeMdKept) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/CLAUDE.md existant conserv${e} : la version de la biblioth${eg}que est dans " + (Paint '.claude/CLAUDE.md.claude-engineering-lib' '1') + ", ${ag} fusionner.")
+        }
+        if ($hookMerge) {
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/settings.json illisible, laiss${e} intact : le hook du r${e}gulateur est dans " + (Paint '.claude/settings.regulator.json' '1') + ", ${ag} fusionner.")
         }
         Write-Host ""
         Write-Host ("  " + (Paint $Arrow $Green) + " Ouvre Claude Code ici et d${e}cris ta t${ac}che : " + (Paint "les agents se lancent tout seuls." "1;$Green"))

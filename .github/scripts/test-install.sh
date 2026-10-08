@@ -58,6 +58,16 @@ check "--version sans valeur : code de sortie non nul" test "$code" -ne 0
 run "$WORK/8.log" --option-inconnue; code=$?
 check "option inconnue : code de sortie non nul" test "$code" -ne 0
 
+# 6. Copie locale (--source) : la version du commit testé, hook du régulateur compris
+mkdir -p "$WORK/src/.claude" && echo '{ "permissions": { "allow": ["Bash(ls)"] } }' >"$WORK/src/.claude/settings.json"
+run "$WORK/9.log" --source "$PWD" --dir "$WORK/src"; code=$?
+check "--source : code de sortie 0" test "$code" -eq 0
+check "--source : hook du régulateur copié" test -f "$WORK/src/.claude/hooks/regulator.sh"
+check "--source : hook enregistré dans settings.json" grep -q 'regulator.sh' "$WORK/src/.claude/settings.json"
+check "--source : réglages existants conservés" grep -q 'Bash(ls)' "$WORK/src/.claude/settings.json"
+run "$WORK/10.log" --source "$PWD" --dir "$WORK/src"
+check "--source : hook enregistré une seule fois" test "$(grep -c 'regulator.sh' "$WORK/src/.claude/settings.json")" -eq 1
+
 if [[ $FAILS -gt 0 ]]; then
   echo
   echo "$FAILS contrôle(s) en échec. Journaux :"

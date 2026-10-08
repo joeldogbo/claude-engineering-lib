@@ -7,12 +7,14 @@ on:
     paths:
       - install.sh
       - install.ps1
+      - hooks/**
       - .github/scripts/**
       - .github/workflows/install.yml
   pull_request:
     paths:
       - install.sh
       - install.ps1
+      - hooks/**
       - .github/scripts/**
       - .github/workflows/install.yml
   workflow_dispatch:

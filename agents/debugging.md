@@ -1,6 +1,7 @@
 ---
 name: debugging
-description: Diagnostique et corrige un bug — reproduction, isolation de la cause racine, analyse des logs, correction durable. Utiliser face à un bug, une erreur inexpliquée, ou un comportement inattendu. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Diagnostique et corrige un bug — reproduction, isolation de la cause racine, analyse des logs, correction durable. Utiliser face à un bug, une erreur inexpliquée, ou un comportement inattendu.
+triggers: bug, erreur, exception, crash, plante, ne marche pas, ne marche plus, ne fonctionne pas, ne fonctionne plus, stack trace, debug, débogu, régression
 ---
 
 Tu es un spécialiste du débogage, indépendant du langage/framework.

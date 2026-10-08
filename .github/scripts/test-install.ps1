@@ -72,6 +72,19 @@ Check "version inexistante : code de sortie non nul" ($r.Code -ne 0)
 Check "version inexistante : message ERREUR" ($r.Out -match 'ERREUR')
 Check "version inexistante : aucun dossier cree" (-not (Test-Path (Join-Path $ko '.claude')))
 
+# 7. Copie locale (-Source) : la version du commit teste, hook du regulateur compris
+$src = Join-Path $work 'src'
+New-Item -ItemType Directory -Path (Join-Path $src '.claude') -Force | Out-Null
+Set-Content -Path (Join-Path $src '.claude/settings.json') -Value '{ "permissions": { "allow": ["Bash(ls)"] } }'
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $src)
+$settingsText = Get-Content (Join-Path $src '.claude/settings.json') -Raw
+Check "-Source : code de sortie 0" ($r.Code -eq 0)
+Check "-Source : hook du regulateur copie" (Test-Path (Join-Path $src '.claude/hooks/regulator.ps1'))
+Check "-Source : hook enregistre dans settings.json" ($settingsText -match 'regulator\.ps1')
+Check "-Source : reglages existants conserves" ($settingsText -match 'Bash\(ls\)')
+$null = Invoke-Install @('-Source', $root, '-TargetDir', $src)
+Check "-Source : hook enregistre une seule fois" (([regex]::Matches((Get-Content (Join-Path $src '.claude/settings.json') -Raw), 'regulator\.ps1')).Count -eq 1)
+
 if ($script:fails -gt 0) {
     ""
     "$($script:fails) controle(s) en echec. Journaux :"

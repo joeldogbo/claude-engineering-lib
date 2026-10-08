@@ -59,11 +59,22 @@ cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE
 
 ## Contenu
 
-Voir [CLAUDE.md](CLAUDE.md) pour l'index complet : 26 agents (architecture, backend, frontend, sécurité, performance, tests, devops, conformité, paiements, intégrations, chatbot IA, e-mails...), 17 skills, 9 standards de référence, 5 templates et 14 workflows invocables via `/workflow <nom>`.
+Voir [CLAUDE.md](CLAUDE.md) pour l'index complet : 39 agents (contexte partagé du projet, cahier des charges, architecture, création de base de données, robustesse d'API, backend, frontend, frameworks UI, sécurité, correction de failles, performance, tests de charge, tests, conseil en déploiement, devops, git, versionnement, conformité, paiements, intégrations, chatbot IA, e-mails, compression de prompts, consommation de jetons, santé du poste...), 20 skills, 11 standards de référence, 6 templates et 14 workflows invocables via `/workflow <nom>`.
 
 ## Utilisation
 
 Une fois installée dans un projet, la bibliothèque est chargée automatiquement par Claude Code via `.claude/CLAUDE.md`. **Décris simplement ta tâche** : à la fin de ton message, Claude choisit et lance lui-même les agents concernés (par exemple `backend` + `database` pour une nouvelle fonctionnalité avec migration, puis `code-reviewer` et `security` sur le résultat). Inutile d'écrire « lance les agents ».
+
+### Le régulateur
+
+Avec des dizaines d'agents, les laisser chacun décider de se lancer mènerait au désordre. Un seul contrôleur décide donc : le **régulateur**, un hook Claude Code (`.claude/hooks/regulator.sh`, ou `regulator.ps1` sous Windows) que l'installateur enregistre dans `.claude/settings.json`.
+
+- **Obligatoire et automatique** : il s'exécute sur chaque prompt, avant que Claude le lise, et ne consomme aucun jeton de modèle.
+- **Il tranche** : il compare le message au champ `triggers:` de chaque agent et ajoute au contexte la liste des agents retenus (quatre au plus), ou « aucun agent ». Claude ne lance que ceux-là.
+- **Il se met à jour seul** : il relit `.claude/agents/` à chaque prompt ; un nouvel agent doté d'un champ `triggers:` est pris en compte immédiatement.
+- **Il se vérifie** : `bash .claude/hooks/regulator.sh --audit` signale les agents sans déclencheurs et les déclencheurs partagés entre plusieurs agents. Un agent qui doit céder la place à un autre déclare des `excludes:` (par exemple `performance` s'efface devant `system-monitor` quand on parle de « mon PC »).
+
+Pour économiser des jetons, écris `/prompt-writer <ton brouillon>` : Claude transforme une demande floue en prompt clair avant de l'exécuter, ce qui évite les allers-retours et le travail refait. Pour alléger durablement les instructions relues à chaque session, demande simplement de compresser `CLAUDE.md` ou un agent : l'agent `prompt-compressor` s'en charge.
 
 Pour forcer un agent précis, nomme-le (« utilise l'agent `performance` »). Les workflows complets se lancent avec `/workflow <nom>`, par exemple `/workflow feature-development` ou `/workflow security-audit`.
 

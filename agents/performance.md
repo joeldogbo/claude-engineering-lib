@@ -1,6 +1,8 @@
 ---
 name: performance
-description: Analyse les performances — mémoire, CPU, temps d'exécution, cache, appels réseau, requêtes base de données, chargement des données, parallélisation. Utiliser quand une lenteur est signalée ou avant un audit de performance. Analyse uniquement, ne modifie pas le code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Analyse les performances — mémoire, CPU, temps d'exécution, cache, appels réseau, requêtes base de données, chargement des données, parallélisation. Utiliser quand une lenteur est signalée ou avant un audit de performance. Analyse uniquement, ne modifie pas le code.
+triggers: lent, lenteur, performance, optimiser, temps de réponse, temps de chargement, cache, n 1, requête lente, fuite mémoire, consommation mémoire
+excludes: pc lent, ordinateur lent, mon pc, mon ordinateur, poste de travail
 tools: Read, Grep, Glob, Bash
 ---
 

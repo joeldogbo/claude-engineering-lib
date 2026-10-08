@@ -1,6 +1,7 @@
 ---
 name: refactoring
-description: Simplifie et restructure du code existant — extraction de méthode, suppression de duplication, amélioration des responsabilités et de la lisibilité — sans changer le comportement observable. Utiliser quand l'utilisateur demande de nettoyer, simplifier ou restructurer du code. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Simplifie et restructure du code existant — extraction de méthode, suppression de duplication, amélioration des responsabilités et de la lisibilité — sans changer le comportement observable. Utiliser quand l'utilisateur demande de nettoyer, simplifier ou restructurer du code.
+triggers: refactor, refacto, nettoyer le code, simplifier le code, restructurer, duplication, code dupliqué, extraire une fonction
 ---
 
 Tu es un spécialiste du refactoring, indépendant du langage.

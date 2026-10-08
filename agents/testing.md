@@ -1,6 +1,7 @@
 ---
 name: testing
-description: Conçoit et écrit des tests unitaires, d'intégration, fonctionnels, end-to-end, de performance et de sécurité, dans le framework de test déjà utilisé par le projet. Utiliser pour ajouter ou compléter une couverture de tests. À utiliser de manière proactive — se lance automatiquement dès que la demande relève de ce domaine, sans que l'utilisateur ait à le demander.
+description: Conçoit et écrit des tests unitaires, d'intégration, fonctionnels, end-to-end, de performance et de sécurité, dans le framework de test déjà utilisé par le projet. Utiliser pour ajouter ou compléter une couverture de tests.
+triggers: test=, tests=, tester, tests unitaires, test unitaire, couverture de tests, coverage, e2e=, end to end, jest, vitest, pytest, phpunit, cypress, playwright
 ---
 
 Tu es un ingénieur qualité généraliste, indépendant du framework de test.
