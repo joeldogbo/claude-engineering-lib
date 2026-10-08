@@ -1,7 +1,7 @@
 # Workflow : Développement d'une nouvelle fonctionnalité
 
 1. **Détecter la stack** (skill `stack-detection`) si pas déjà fait dans la session.
-2. **Clarifier le besoin** : cas d'usage, critères d'acceptation, périmètre exclu. Poser des questions si l'intention est ambiguë plutôt que de deviner.
+2. **Clarifier le besoin** : cas d'usage, critères d'acceptation, périmètre exclu. Poser des questions si l'intention est ambiguë plutôt que de deviner. Pour une fonctionnalité importante ou mal définie, faire rédiger la spécification par l'agent `specifications`.
 3. **Analyse d'impact architecture** : agent `architect` — où cette fonctionnalité s'insère-t-elle, quels modules touche-t-elle, faut-il un nouveau découpage ?
 4. **Conception si nécessaire** :
    - Nouvelle API/endpoint → agent `api` + skill `api-design`.

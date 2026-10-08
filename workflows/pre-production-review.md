@@ -2,10 +2,10 @@
 
 1. **Tests** : la suite complète (unitaire, intégration, E2E si disponible) passe — agent `testing`.
 2. **Sécurité** : `/workflow security-audit` sur les changements récents, en particulier tout ce qui touche auth/permissions/entrées utilisateur.
-3. **Performance** : vérifier qu'aucune régression de performance évidente n'a été introduite (skill `performance-audit`) sur les chemins critiques.
+3. **Performance** : vérifier qu'aucune régression de performance évidente n'a été introduite (skill `performance-audit`) sur les chemins critiques. Avant un lancement ou un pic de trafic attendu, faire vérifier la capacité par l'agent `load-testing` sur l'environnement de recette.
 4. **Migrations de base de données** : vérifier qu'elles sont sûres à exécuter sur les données de production (voir `/workflow db-migration`), et qu'un plan de rollback existe.
 5. **Configuration/secrets** : variables d'environnement de production présentes et correctes, aucun secret en dur, aucune configuration de debug/développement active (stack traces exposées, logs verbeux, mode debug).
-6. **CI/CD** : le pipeline de déploiement est vert, la stratégie de rollback est connue et testée (agent `devops` + skill `cicd-pipeline`).
+6. **CI/CD** : pour une première mise en ligne ou un changement d'hébergeur, faire valider l'hébergement et la checklist de mise en ligne par l'agent `deployment-advisor`. Le pipeline de déploiement est vert, la stratégie de rollback est connue et testée (agent `devops` + skill `cicd-pipeline`).
 7. **Documentation** : changelog à jour ([entree-changelog.md](../templates/entree-changelog.md)), documentation utilisateur mise à jour si le comportement visible change.
 8. **Plan de vérification post-déploiement** : que va-t-on observer juste après le déploiement pour confirmer que tout fonctionne (logs, métriques, endpoint de santé) ?
 
