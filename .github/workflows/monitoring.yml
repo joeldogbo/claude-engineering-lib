@@ -1,0 +1,68 @@
+name: Scripts de surveillance
+
+# Exécute réellement les scripts des skills token-usage et system-health sur chaque OS.
+on:
+  push:
+    branches: [main]
+    paths:
+      - skills/token-usage/**
+      - skills/system-health/**
+      - .github/scripts/test_token_usage.py
+      - .github/workflows/monitoring.yml
+  pull_request:
+    paths:
+      - skills/token-usage/**
+      - skills/system-health/**
+      - .github/scripts/test_token_usage.py
+      - .github/workflows/monitoring.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monitoring:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: token-usage sur des journaux fictifs
+        run: python .github/scripts/test_token_usage.py
+
+      - name: ShellCheck
+        if: runner.os == 'Linux'
+        run: shellcheck -S warning skills/system-health/system-health.sh
+
+      - name: system-health (macOS, Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash skills/system-health/system-health.sh | tee out.txt
+          grep -q '## Mémoire' out.txt && grep -q '## Batterie' out.txt
+
+      - name: system-health (Windows PowerShell 5.1)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $out = powershell -NoProfile -File skills/system-health/system-health.ps1 | Out-String
+          $out
+          if ($out -notmatch '## M.moire' -or $out -notmatch '## Batterie') { exit 1 }
+          exit 0
+
+      - name: system-health (PowerShell 7)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $out = pwsh -NoProfile -File skills/system-health/system-health.ps1 | Out-String
+          $out
+          if ($out -notmatch '## M.moire' -or $out -notmatch '## Batterie') { exit 1 }
+          exit 0
