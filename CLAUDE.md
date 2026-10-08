@@ -38,10 +38,15 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | accessibilité, contraste, clavier, lecteur d'écran | `accessibility` |
 | référencement, meta, sitemap, robots.txt | `seo` |
 | visibilité dans ChatGPT/Perplexity/IA, llms.txt | `geo` |
-| conformité d'ensemble d'un site | `compliance` (qui répartit vers `legal`, `privacy`, `consent`...) |
+| conformité d'ensemble d'un site | `compliance` (qui répartit vers `legal`, `privacy`, `consent`, `financial-compliance`...) |
 | mentions légales, CGU, remboursement | `legal` |
 | données personnelles, RGPD, politique de confidentialité | `privacy` |
 | cookies, traceurs, bandeau de consentement | `consent` |
+| paiement, prestataire de paiement, webhook de paiement, remboursement, abonnement, renouvellement, « payé mais pas d'accès » | `payments` |
+| API externe, synchronisation de comptes, cron, tâche planifiée, file de tâches | `integrations` |
+| chatbot, assistant IA, prompt, modèle d'IA, réponse coupée, garde-fou | `ai-chatbot` (+ `financial-compliance` si le sujet touche à l'argent) |
+| e-mail automatique, reçu, rappel, billet, e-mail qui n'arrive pas ou arrive en spam | `emails` |
+| promesse de gain, rendement, conseil en investissement, avertissement sur les risques | `financial-compliance` |
 
 ## Agents (`agents/`)
 
@@ -68,6 +73,11 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `legal` | Pages légales : mentions, CGU, remboursement (jamais d'avis juridique) | Implémentation |
 | `privacy` | Données personnelles : inventaire, minimisation, droits, politique de confidentialité | Implémentation |
 | `consent` | Cookies et traceurs : inventaire, blocage préalable, bandeau, politique de cookies | Implémentation |
+| `payments` | Cycle de paiement, tout prestataire : webhooks signés, états, remboursements, renouvellements, réconciliation, accès de chaque payeur | Implémentation |
+| `integrations` | API externes (création de comptes, progression, retrait des accès) et tâches planifiées réellement exécutées en production | Implémentation |
+| `ai-chatbot` | Chatbot IA, tout fournisseur : consignes, garde-fous, changement de modèle, réponses coupées, repli FAQ, questions pièges | Implémentation |
+| `emails` | E-mails automatiques : modèles, reçus, bienvenue, rappels, billets, déclencheurs, délivrabilité | Implémentation |
+| `financial-compliance` | Promesses de rendement, conseil personnalisé, avertissements manquants dans le site, le chatbot et les e-mails — ne remplace pas un juriste | Analyse seule |
 
 ## Skills (`skills/`)
 

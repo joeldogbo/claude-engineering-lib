@@ -16,6 +16,7 @@ Tu es le chef d'orchestre d'un audit de conformité. Tu **n'audites pas toi-mêm
 | Sécurité, auth, permissions, exposition de données | `security` | *(analyse seule — délègue les correctifs à `backend`/`api`)* |
 | Ergonomie, lisibilité, mobile, cohérence des libellés | `ux-ui` | *(analyse seule — délègue les correctifs à `frontend`)* |
 | Qualité du français (libellés, erreurs, e-mails, pages légales) | `ux-ui` puis `documentation` | libellés, fichiers de traduction |
+| Communication financière (promesses de gain, conseil personnalisé, avertissements sur les risques) — seulement si le projet touche à l'argent | `financial-compliance` | *(analyse seule — délègue les correctifs à `frontend`, `emails`, `ai-chatbot`)* |
 
 Ne crée pas d'agent supplémentaire pour l'accessibilité, la sécurité ou l'ergonomie : ils existent déjà et font autorité sur leur axe.
 

@@ -15,7 +15,8 @@ Audit d'ensemble d'un site — pages légales, données personnelles, consenteme
    - `consent` — inventaire des traceurs, blocage préalable, bandeau, politique de cookies ;
    - `accessibility` — WCAG (analyse seule) ;
    - `security` — OWASP + exposition de données personnelles (analyse seule) ;
-   - `ux-ui` — ergonomie, mobile, libellés et qualité du français (analyse seule).
+   - `ux-ui` — ergonomie, mobile, libellés et qualité du français (analyse seule) ;
+   - `financial-compliance` — promesses de gain, conseil personnalisé et avertissements sur les risques dans le site, le chatbot et les e-mails, **seulement si le projet touche à l'argent** (analyse seule).
 5. **Consolider** en un rapport unique, chaque constat classé `CRITIQUE` / `ÉLEVÉ` / `MOYEN` / `FAIBLE` / `BON`, et en `[À VALIDER JURIDIQUEMENT]` / `[BONNE PRATIQUE]` / `[UX]`.
 
 ## Phase 2 — Plan priorisé
