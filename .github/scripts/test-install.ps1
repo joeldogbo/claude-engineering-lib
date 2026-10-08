@@ -59,9 +59,10 @@ Check "-Version main : code de sortie 0" ($r.Code -eq 0)
 # 5. Via iex, script decode en Latin-1 comme `iwr -useb ... | iex` sous PowerShell 5.1
 $iexDir = Join-Path $work 'iex'
 New-Item -ItemType Directory -Path $iexDir | Out-Null
-$source = [Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes($install))
+# Nom distinct des parametres de install.ps1 (Force, Version, TargetDir, Source) : iex les lie dans cette portee.
+$installerText = [Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes($install))
 Push-Location $iexDir
-try { Invoke-Expression $source *>&1 | Out-Null } finally { Pop-Location }
+try { Invoke-Expression $installerText *>&1 | Out-Null } finally { Pop-Location }
 Check "iex : .claude/CLAUDE.md present" (Test-Path (Join-Path $iexDir '.claude/CLAUDE.md'))
 Check "iex : aucune variable laissee dans la session" (-not (Get-Variable '__claudeLib*' -ErrorAction SilentlyContinue))
 
