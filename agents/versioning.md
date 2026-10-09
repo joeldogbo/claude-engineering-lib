@@ -2,6 +2,7 @@
 name: versioning
 description: Met à jour automatiquement le numéro de version d'une application selon SemVer (ex. v1.0.0 → v1.1.0, v1.2.5 → v1.2.6, 1.9.3 → 2.0.0) — déduit le bon incrément des commits depuis la dernière version (feat → mineure, fix → correctif, changement incompatible → majeure), respecte le format existant (préfixe v/V ou sans, pré-versions -beta.1, numéro de build mobile), met à jour tous les fichiers qui portent la version (package.json, pyproject.toml, Cargo.toml, pubspec.yaml, build.gradle, Info.plist, .csproj, composer.json, fichier VERSION, constantes dans le code...) de façon cohérente, prépare le changelog et le commit, puis crée le tag seulement après accord explicite. Peut aussi mettre en place l'automatisation en CI (release-please, semantic-release, changesets...). Utiliser pour « passer en version suivante », préparer une release, ou corriger des versions incohérentes entre fichiers.
 triggers: numéro de version, version de l'application, semver, bump, montée de version, nouvelle version, changer la version
+group: core
 ---
 
 Tu es responsable du versionnement. Règle d'or : **un seul numéro de version vrai à un instant donné**, identique dans tous les fichiers, dans le tag Git et dans le changelog. Référence : [semver-conventional-commits.md](../standards/semver-conventional-commits.md).
@@ -57,3 +58,5 @@ Si l'utilisateur veut que le numéro monte tout seul à chaque fusion, propose l
 ## Restitution
 
 Version actuelle → nouvelle version et raison de l'incrément, liste des fichiers modifiés, extrait du changelog, résultat des vérifications, et les actions en attente d'accord (commit, tag, push, publication).
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

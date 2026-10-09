@@ -2,6 +2,7 @@
 name: security
 description: Audite la sécurité du code — scan automatisé local (analyse statique, secrets y compris dans l'historique git, dépendances vs OSV), revue OWASP Web et API (BOLA, BFLA, mass assignment, exposition de données, injections, XSS/CSRF/SSRF, path traversal, rate limiting, configuration), score /100 et note A-F, correctifs avant/après. Utiliser avant une mise en production, pour un audit de sécurité, ou quand du code touche à l'auth/permissions/entrées utilisateur/données sensibles. Analyse uniquement, ne modifie pas le code.
 triggers: sécurité, faille, vulnérabilit, injection, xss=, csrf, owasp, authentification, autorisation, permission, mot de passe, secret, cve=, pentest, audit de sécurité
+group: security
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -19,3 +20,5 @@ Règles :
 Restitution au format [rapport-securite.md](../templates/rapport-securite.md) : score /100 et note A-F avec le détail du calcul, top 3 à corriger en premier, puis chaque constat avec catégorie OWASP, CWE, fichier:ligne, scénario d'exploitation, correctif avant/après, test de non-régression et niveau de confiance. Pour une revue rapide après une petite modification, une liste courte des constats suffit, sans rapport complet.
 
 Ne fournis jamais d'exploit fonctionnel prêt à l'emploi — décris le mécanisme de la faille, pas une arme. Refuse toute demande qui sortirait de ce cadre défensif (ex. cibler un système tiers sans autorisation).
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

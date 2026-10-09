@@ -20,6 +20,12 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 6. **Annonce en une ligne** les agents lancés et pourquoi (ex. « Je lance `backend` pour l'endpoint et `database` pour la migration. »), puis restitue une synthèse de leurs résultats — jamais leurs rapports bruts.
 7. Si une demande correspond à un workflow complet (fonctionnalité de bout en bout, nouveau module, correction de bug, audit, revue de PR, release...), suis le workflow correspondant via le skill `workflow` plutôt que d'improviser l'enchaînement. Une release ne se tague et ne se déploie jamais sans accord explicite de l'utilisateur.
 8. **Contexte partagé.** Joins à chaque agent lancé l'extrait utile de `.claude/project-context.md`, la mémoire commune du projet. Si ce fichier est absent ou périmé, ou avant une tâche qui mobilise 3 agents ou plus, lance d'abord `project-context` : il prépare le brief et la répartition des fichiers, puis toi, en contrôleur, tu lances les agents. Demande à chaque agent de finir par un relais au format de `project-context` (fait, fichiers, décisions, contrat produit, points pour l'agent suivant).
+9. **Niveaux N1 → N2.** Un agent N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1 (le N2 déclare ses N1 dans `after:` ; le régulateur affiche `[N1 → …]` et `[N2 de …]`). Lance le N1 seul, puis le N2 seulement s'il y a des constats, jamais les deux en parallèle ; demande l'accord de l'utilisateur avant un N2 de sécurité ou de déploiement. Le N1 revérifie ensuite le travail du N2.
+10. **Reprise après interruption.** Pour toute tâche de 3 étapes ou plus, fais tenir un point de reprise `.claude/progress/<sujet>.md` (étapes cochées au fur et à mesure). Quand le régulateur signale un « travail interrompu », propose de reprendre à la première étape non cochée, après avoir vérifié que les étapes cochées sont bien faites.
+11. **Langue du projet.** Réponds, documente et rédige les commits dans la langue inscrite dans la section `Langue` de `.claude/project-context.md` ; si elle manque, lance `language` lors du premier travail qui produit du texte.
+12. **Agents installés seulement.** L'installation peut ne retenir qu'une partie des agents (type de projet, groupes). Ne lance que ceux présents dans `.claude/agents/` ; si un agent utile manque, dis-le et donne la commande pour l'ajouter (`--agents <nom>` ou `-Agents <nom>` à l'installateur).
+
+Toutes ces règles, et celles que chaque agent applique de son côté, sont réunies dans le [protocole commun des agents](standards/agent-protocol.md). Il s'applique à tous les agents, existants et futurs.
 
 
 ## Agents (`agents/`)
@@ -46,6 +52,8 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 | `ux-ui` | Ergonomie, hiérarchie visuelle, espacements, typographie, responsive 320–1920 px, cohérence avec le design system, comparaison avec des références externes | Analyse seule |
 | `accessibility` | Accessibilité (a11y), contraste, navigation clavier | Analyse seule |
 | `documentation` | README, ADR, doc technique/utilisateur, changelog | Implémentation |
+| `manuals` | Manuels développeur, utilisateur et de déploiement, rédigés depuis le code réel, commandes vérifiées | Implémentation |
+| `language` | Langue de travail du projet inscrite dans le contexte pour tous les agents, mélanges de langues, internationalisation et traduction | Implémentation |
 | `code-reviewer` | Lisibilité, duplication, complexité, conventions | Analyse seule |
 | `refactoring` | Simplification, extraction, suppression de duplication | Implémentation |
 | `api` | Conception REST/GraphQL/gRPC/WebSocket | Implémentation |
@@ -93,7 +101,7 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 
 ## Standards (`standards/`)
 
-Fiches de référence condensées, lues à la demande par les agents/skills : `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `owasp-api-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `ui-design.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
+Fiches de référence condensées, lues à la demande par les agents/skills : `agent-protocol.md` (règles communes à tous les agents : contrôleur, langue, points de reprise, niveaux N1/N2, relais), `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `owasp-api-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `ui-design.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
 
 ## Templates (`templates/`)
 
@@ -105,7 +113,14 @@ Invocables via `/workflow <nom>` : `feature-development`, `new-module`, `bug-fix
 
 ## Étendre la bibliothèque
 
-- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel) avec un champ `triggers:` — mots ou expressions qui doivent le déclencher, séparés par des virgules, `mot=` pour un mot entier — et, si besoin, `excludes:` pour les messages qui relèvent d'un autre agent. Le régulateur le prend en compte dès le prompt suivant, sans autre modification. Vérifier ensuite l'absence de déclencheurs manquants ou partagés : `bash .claude/hooks/regulator.sh --audit` (ou `regulator.ps1 -Audit`). Ne pas ajouter de phrase « à utiliser de manière proactive » : seul le régulateur décide.
+- Nouvel agent : ajouter `agents/<nom>.md` (frontmatter `name`/`description`/`tools` optionnel) avec, **obligatoirement** :
+  - `triggers:` — mots ou expressions qui doivent le déclencher, séparés par des virgules, `mot=` pour un mot entier — et, si besoin, `excludes:` pour les messages qui relèvent d'un autre agent ;
+  - `group:` — un groupe de `profiles.conf`, pour l'installation par type de projet ou par groupe ;
+  - `after: <agent N1>` s'il corrige ce qu'un agent d'analyse a relevé (niveau N2) ;
+  - en fin de fichier, le lien vers le [protocole commun](standards/agent-protocol.md).
+
+  Le régulateur le prend en compte dès le prompt suivant, sans autre modification. Vérifier ensuite : `bash .claude/hooks/regulator.sh --audit` (ou `regulator.ps1 -Audit`) échoue si l'une de ces règles manque et signale les déclencheurs partagés ; la CI l'exécute à chaque modification d'agent. Ne pas ajouter de phrase « à utiliser de manière proactive » : seul le régulateur décide.
+- Nouveau groupe ou type de projet : l'ajouter dans `profiles.conf` (`group|nom|description` ou `profile|nom|description|groupes`) ; les installateurs le proposent aussitôt.
 - Nouveau skill : ajouter `skills/<nom>/SKILL.md`.
 - Nouveau standard/template : ajouter le fichier dans `standards/`/`templates/` et le référencer depuis les skills concernés.
 - Nouveau workflow : ajouter `workflows/<nom>.md` et l'ajouter à la liste ci-dessus + dans le skill `workflow`.

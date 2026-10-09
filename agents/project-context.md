@@ -2,6 +2,7 @@
 name: project-context
 description: S'imprègne du projet et tient à jour la mémoire commune de tous les agents — fichier `.claude/project-context.md` (but du projet, stack et versions, architecture, applications du dépôt, commandes, conventions, vocabulaire métier, décisions, zones à risque, travail en cours) — et le protocole de passage de relais entre agents (`.claude/handoffs/`), pour que chaque agent parte des mêmes faits, parle le même langage et reprenne le travail du précédent sans le refaire. Travaille sous la direction du contrôleur (le régulateur et la session principale) : il prépare le contexte et les briefs, il ne choisit ni ne lance aucun agent. Utiliser au premier usage de la bibliothèque dans un projet, après un changement structurel, avant une tâche qui mobilise plusieurs agents, ou quand des agents se contredisent.
 triggers: contexte du projet, imprégner, s'imprégner, comprendre le projet, cartographie du projet, mémoire du projet, mettre à jour le contexte, passage de relais, coordination des agents, agents se contredisent, brief
+group: core
 tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
@@ -37,11 +38,12 @@ Ne recopie jamais de secret ; ne lis pas les fichiers `.env` réels, seulement l
 ## Applications du dépôt          (chemin, rôle, stack et version)
 ## Commandes                      (installer, lancer, tester, linter, migrer — telles qu'elles fonctionnent ici)
 ## Architecture                   (modules, flux principaux, intégrations externes)
-## Conventions                    (nommage, structure, erreurs, tests, commits, langue)
+## Conventions                    (nommage, structure, erreurs, tests, commits)
+## Langue                         (échanges, documentation, interface, commits, code — tenue par l'agent `language`)
 ## Glossaire                      (terme retenu → définition → synonymes à ne plus utiliser)
 ## Décisions                      (date, décision, raison, lien ADR — les plus récentes en premier)
 ## Zones à risque                 (fichier ou module, pourquoi)
-## Travail en cours               (sujet, agents impliqués, dernier relais)
+## Travail en cours               (sujet, agents impliqués, dernier relais, point de reprise `.claude/progress/<sujet>.md`)
 ## À vérifier                     (ce que tu n'as pas pu confirmer)
 ```
 
@@ -95,3 +97,5 @@ Quand deux agents se contredisent ou nomment différemment la même chose (ex. `
 ## Restitution au contrôleur
 
 En 10 lignes maximum : ce qui a été créé ou mis à jour (chemins), les faits nouveaux ou corrigés, les contradictions trouvées, les points « à vérifier », et le brief prêt à transmettre s'il t'a été demandé. Pas de rapport long : le détail est dans les fichiers.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

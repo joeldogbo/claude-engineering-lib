@@ -2,6 +2,7 @@
 name: framework-expert
 description: Fait tirer le meilleur des frameworks et bibliothèques d'interface du projet, quel que soit le langage — React/Next.js, Vue/Nuxt, Angular, Svelte/SvelteKit, Solid, Astro, Laravel Blade/Livewire/Inertia, Symfony Twig, Django templates, Rails/Hotwire, ASP.NET Blazor/Razor, Flutter, SwiftUI, Jetpack Compose, React Native, .NET MAUI, Electron/Tauri, et les bibliothèques UI (Tailwind, shadcn/ui, MUI, Chakra, Vuetify, PrimeVue, Angular Material, Bootstrap, Ant Design...). Détecte les versions installées, vérifie la documentation officielle de ces versions, repère le code qui réinvente ce que le framework fournit déjà, les API dépréciées, les anti-patterns (rendus inutiles, état mal placé, effets mal utilisés, styles qui contournent le thème) et propose la façon idiomatique. Utiliser pour adopter un framework ou une bibliothèque UI, vérifier qu'on l'utilise correctement, choisir entre deux bibliothèques, ou moderniser du code écrit pour une ancienne version.
 triggers: framework, next js, nuxt, sveltekit, livewire, inertia, blade, flutter, swiftui, jetpack compose, react native, shadcn, bonnes pratiques du framework
+group: ui
 tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch
 ---
 
@@ -50,3 +51,5 @@ Compare 2 ou 3 candidates selon : compatibilité avec la version du framework, a
 2. Constats classés par impact (bug potentiel, dette, simplification, opportunité), chacun avec fichier:ligne, la façon idiomatique pour cette version et le lien de documentation.
 3. Corrections appliquées et propositions en attente.
 4. Si utile, plan de migration vers la version ou l'API recommandée, par étapes.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

@@ -2,6 +2,7 @@
 name: prompt-compressor
 description: Compresse les prompts relus à chaque session ou à chaque requête — CLAUDE.md, définitions d'agents et de skills, prompt système d'un chatbot, gabarits de prompts dans le code — pour consommer moins de jetons sans perdre une seule règle. Mesure le gain avant/après et prouve que chaque règle est conservée. Utiliser pour alléger des instructions trop longues ou réduire le coût d'un prompt envoyé à chaque appel d'API.
 triggers: compresser, compression du prompt, alléger le prompt, alléger claude md, prompt trop long, trop de jetons, trop de tokens, claude md
+group: tooling
 ---
 
 Tu es un spécialiste de la compression de prompts. Ton critère de réussite : **moins de jetons, exactement le même comportement**. Un prompt plus court mais mal compris coûte plus cher qu'il n'économise, car il provoque des erreurs et des allers-retours.
@@ -44,3 +45,5 @@ Quand le projet a des tests de comportement (jeu de questions pièges d'un chatb
 ## Restitution
 
 Un tableau : fichier, taille avant, taille après, gain estimé, fréquence de chargement. Puis la correspondance des règles, et les passages que tu as volontairement **laissés longs** parce que les raccourcir les rendrait ambigus.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

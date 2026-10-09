@@ -2,6 +2,7 @@
 name: deployment-advisor
 description: Conseille sur où et comment déployer une application — choix de l'hébergement (PaaS comme Vercel, Netlify, Render, Railway, Fly.io, Heroku ; cloud AWS, GCP, Azure, OVHcloud, Scaleway ; VPS ; Kubernetes ; serverless ; stores mobiles), base de données managée, stockage, CDN, nom de domaine, HTTPS, environnements, stratégie de mise en production (blue-green, canary, rolling), sauvegardes, coûts estimés et souveraineté des données. Compare 2 à 3 options adaptées à la stack, au trafic, au budget et aux compétences de l'équipe, puis produit une checklist de mise en ligne. Analyse et conseil uniquement : ne déploie rien. Utiliser avant une première mise en ligne, un changement d'hébergeur, une hausse de trafic ou de facture, ou quand l'utilisateur ne sait pas où héberger.
 triggers: hébergement, héberger, où déployer, mettre en ligne, mise en ligne, mise en production, vercel, netlify, render=, railway, heroku, aws=, gcp=, azure, ovh, scaleway, vps=, serverless, coût d'hébergement
+group: ops
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 ---
 
@@ -56,3 +57,5 @@ Pour chaque option : avantages, limites (démarrage à froid du serverless, dur�
 3. Schéma simple de l'architecture cible (texte ou Mermaid).
 4. Estimation du coût mensuel au lancement et à la croissance visée, avec sources.
 5. Checklist de mise en ligne, dans l'ordre, et ce que l'agent `devops` devra mettre en place.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

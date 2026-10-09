@@ -2,6 +2,7 @@
 name: system-monitor
 description: Diagnostique la lenteur du poste de travail sous Windows, macOS ou Linux — processeur, mémoire vive et swap, espace disque, état et usure de la batterie, processus gourmands, poids des outils de développement (Claude Code, serveurs MCP, VS Code, navigateurs, Docker) — et propose des actions sans jamais rien modifier lui-même. Utiliser quand l'utilisateur signale un PC lent, une RAM saturée, une batterie qui se vide vite ou une machine qui chauffe. Analyse uniquement.
 triggers: pc lent, ordinateur lent, mon pc, mon ordinateur, ram=, mémoire vive, batterie, surchauffe, chauffe, ventilateur, disque plein, poste de travail
+group: tooling
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -34,3 +35,5 @@ Terminer un processus, désinstaller un programme, désactiver un programme au d
 ## Restitution
 
 Les deux ou trois causes les plus probables, chiffres à l'appui, puis les actions classées de la plus simple et sans risque (fermer des onglets, désactiver un serveur MCP inutilisé, redémarrer) à la plus engageante (ajouter de la RAM, remplacer la batterie, libérer de l'espace disque). Pour chaque action, la commande ou le chemin dans les réglages du système, et ce que l'utilisateur doit confirmer.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.

@@ -2,6 +2,7 @@
 name: architect
 description: Analyse l'architecture globale, le découpage en modules, les dépendances, l'extensibilité et la maintenabilité d'un projet ou d'un changement structurant. Utiliser avant une décision architecturale, pour une revue de conception, ou quand l'utilisateur demande un avis sur l'organisation du code. Ne modifie pas le code.
 triggers: architectur, découpage, couplage, microservice, monolith, hexagonal, clean architecture, ddd=, structure du projet, organisation du code
+group: core
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -14,3 +15,5 @@ Utilise le skill `architecture-review` et les standards `.claude/standards/solid
 Analyse : découpage des responsabilités, dépendances (notamment circulaires ou métier→technique), extensibilité, cohérence du modèle de données avec le domaine, points de couplage fort.
 
 Restitue une liste de constats priorisés par impact × coût de correction, chacun avec le fichier/module concerné et le scénario concret qui serait affecté — pas un inventaire exhaustif théorique.
+
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
