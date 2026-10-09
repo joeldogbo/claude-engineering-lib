@@ -8,6 +8,15 @@
 #   curl -fsSL .../install.sh | bash -s -- --version v1.2.0
 #   curl -fsSL .../install.sh | bash -s -- --dir ./mon-projet
 #   bash install.sh --source ./claude-engineering-lib   # depuis une copie locale (tests, CI)
+#
+# Choix des agents (groupes et profils décrits dans profiles.conf) :
+#   --type web|mobile|api|desktop|library   agents adaptés au type de projet
+#   --groups security,performance           groupes d'agents (core est toujours installé)
+#   --agents seo,geo                        agents précis, à ajouter à une installation existante
+#   --all                                   tous les agents
+#   --yes                                   sans menu : type détecté (tout si rien n'est reconnu)
+# Sans option, un menu propose le type détecté dans le projet. Les mêmes choix passent par
+# CLAUDE_LIB_TYPE, CLAUDE_LIB_GROUPS, CLAUDE_LIB_AGENTS, CLAUDE_LIB_ALL=1, CLAUDE_LIB_YES=1.
 
 set -euo pipefail
 
@@ -15,6 +24,11 @@ REPO="joeldogbo/claude-engineering-lib"
 TARGET_DIR="$(pwd)"
 FORCE=0
 VERSION=""
+TYPE="${CLAUDE_LIB_TYPE:-}"
+GROUPS_WANTED="${CLAUDE_LIB_GROUPS:-}"
+AGENTS_WANTED="${CLAUDE_LIB_AGENTS:-}"
+ALL="${CLAUDE_LIB_ALL:-0}"
+YES="${CLAUDE_LIB_YES:-0}"
 
 # --- Affichage : couleurs ANSI 256, désactivées hors terminal ou avec NO_COLOR ---
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then USE_COLOR=1; else USE_COLOR=0; fi
@@ -127,15 +141,20 @@ trap cleanup EXIT
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --force) FORCE=1; shift ;;
-    --version|--dir|--source)
+    --all) ALL=1; shift ;;
+    --yes) YES=1; shift ;;
+    --version|--dir|--source|--type|--groups|--agents)
       if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then die "L'option $1 attend une valeur."; fi
       case "$1" in
         --version) VERSION="$2" ;;
         --dir) TARGET_DIR="$2" ;;
         --source) SOURCE="$2" ;;
+        --type) TYPE="$2" ;;
+        --groups) GROUPS_WANTED="$2" ;;
+        --agents) AGENTS_WANTED="$2" ;;
       esac
       shift 2 ;;
-    *) die "Option inconnue : $1 (options : --force, --version <tag>, --dir <dossier>, --source <copie locale>)." ;;
+    *) die "Option inconnue : $1 (options : --force, --version <tag>, --dir <dossier>, --source <copie locale>, --type <type>, --groups <g1,g2>, --agents <a1,a2>, --all, --yes)." ;;
   esac
 done
 
@@ -174,10 +193,182 @@ else
   SRC_DIR="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 fi
 
-COPY_ITEMS=(agents skills standards templates workflows hooks)
+# --- Choix des agents : groupes et profils de profiles.conf, groupe de chaque agent ---
+# Listes séparées par des espaces (bash 3.2 de macOS : pas de tableaux associatifs).
+PROFILES_FILE="$SRC_DIR/profiles.conf"
+GROUP_LIST=""; PROFILE_LIST=""
+conf_field() { # type nom numéro-de-champ
+  awk -F'|' -v k="$1" -v n="$2" -v f="$3" '{ sub(/\r$/, "") } $1 == k && $2 == n { print $f; exit }' "$PROFILES_FILE"
+}
+if [[ -f "$PROFILES_FILE" ]]; then
+  GROUP_LIST="$(awk -F'|' '$1 == "group" { printf "%s ", $2 }' "$PROFILES_FILE")"
+  PROFILE_LIST="$(awk -F'|' '$1 == "profile" { printf "%s ", $2 }' "$PROFILES_FILE")"
+fi
+# nom<TAB>groupe pour chaque agent, en un seul processus (Git Bash est lent à en lancer).
+AGENT_TABLE="$(awk 'FNR == 1 { front = ($0 ~ /^---/); n = FILENAME; sub(/.*\//, "", n); sub(/\.md$/, "", n); g = "" }
+  front && FNR > 1 && /^---/ { print n "\t" g; front = 0 }
+  front && /^group:/ { g = $0; sub(/^group:[ \t]*/, "", g); sub(/[ \t\r]+$/, "", g) }' "$SRC_DIR"/agents/*.md)"
+AGENT_LIST="$(printf '%s\n' "$AGENT_TABLE" | cut -f1 | tr '\n' ' ')"
+in_list() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; } # élément liste
+agents_of_groups() { # "g1 g2" → agents de ces groupes
+  printf '%s\n' "$AGENT_TABLE" | awk -F'\t' -v gs=" $1 " 'index(gs, " " $2 " ") { printf "%s ", $1 }'
+}
+# shellcheck disable=SC2086  # découpage en mots voulu
+count_words() { set -- $1; echo $#; }
+# shellcheck disable=SC2086
+nth_word() { local n="$1"; set -- $2; shift $((n - 1)); printf '%s' "$1"; } # numéro liste
+
+# Type de projet d'après les fichiers présents ; DETECTED_WHY dit pourquoi.
+DETECTED=""; DETECTED_WHY=""
+detect_type() {
+  local d="$TARGET_DIR" pkg=""
+  [[ -f "$d/package.json" ]] && pkg="$(cat "$d/package.json")"
+  has_dep() { case "$pkg" in *"\"$1"*) return 0 ;; esac; return 1; }
+  if [[ -f "$d/pubspec.yaml" ]]; then DETECTED=mobile; DETECTED_WHY="pubspec.yaml (Flutter)"
+  elif has_dep react-native || has_dep expo\" || has_dep @capacitor/ || has_dep @ionic/; then DETECTED=mobile; DETECTED_WHY="package.json (mobile)"
+  elif [[ -f "$d/app/src/main/AndroidManifest.xml" || -d "$d/ios" && -d "$d/android" ]] || ls -d "$d"/*.xcodeproj >/dev/null 2>&1; then DETECTED=mobile; DETECTED_WHY="projet Android ou iOS"
+  elif has_dep electron\" || has_dep @tauri-apps/ || [[ -d "$d/src-tauri" ]]; then DETECTED=desktop; DETECTED_WHY="Electron ou Tauri"
+  elif grep -qsE '<Use(WPF|WindowsForms)>true' "$d"/*.csproj; then DETECTED=desktop; DETECTED_WHY="WPF ou WinForms"
+  elif has_dep react\" || has_dep vue\" || has_dep @angular/core || has_dep svelte || has_dep next\" || has_dep nuxt || has_dep astro || has_dep vite\"; then DETECTED=web; DETECTED_WHY="package.json (front web)"
+  elif [[ -f "$d/composer.json" || -f "$d/manage.py" || -f "$d/Gemfile" || -f "$d/index.html" ]]; then DETECTED=web; DETECTED_WHY="framework web côté serveur"
+  elif [[ -f "$d/go.mod" || -f "$d/pom.xml" || -f "$d/build.gradle" || -f "$d/build.gradle.kts" || -f "$d/requirements.txt" || -f "$d/package.json" ]] || ls "$d"/*.csproj >/dev/null 2>&1; then DETECTED=api; DETECTED_WHY="backend sans interface détectée"
+  elif [[ -f "$d/Cargo.toml" || -f "$d/pyproject.toml" || -f "$d/setup.py" || -f "$d/CMakeLists.txt" ]]; then DETECTED=library; DETECTED_WHY="bibliothèque ou CLI"
+  fi
+}
+
+# Saisie du menu sur le terminal, même via « curl | bash » ; CLAUDE_LIB_TTY la remplace (tests).
+TTY_IN="${CLAUDE_LIB_TTY:-/dev/tty}"
+TRIES=0
+retry() { # message — au-delà de 3 réponses invalides, l'installation s'arrête au lieu de boucler
+  TRIES=$((TRIES + 1))
+  if (( TRIES >= 3 )); then die "Choix invalide. Relance avec --type, --groups, --agents ou --all."; fi
+  printf '  %s\n' "$(paint "$YELLOW" "$1")"
+}
+ask() { # question défaut — lit le descripteur 3, ouvert une fois sur TTY_IN par le menu
+  local reply="" question
+  question="$(printf '  %s %s ' "$(paint 1 "$1")" "$(paint "$GRAY" "[$2]")")"
+  # Hors de la sortie standard, capturée par $(ask ...) ; descripteur 2 et non /dev/stderr,
+  # qui rouvrirait le fichier journal depuis le début.
+  if [[ -n "${CLAUDE_LIB_TTY:-}" ]]; then printf '%s ' "$question" >&2; else printf '%s ' "$question" >/dev/tty; fi
+  IFS= read -r reply <&3 || reply=""
+  printf '%s' "${reply:-$2}"
+}
+
+choose_menu() {
+  local i=0 p choice desc nums n g extra
+  echo
+  if [[ -n "$DETECTED" ]]; then
+    printf '  Type de projet détecté : %s %s\n\n' "$(paint "1;$GREEN" "$DETECTED")" "$(paint "$GRAY" "($DETECTED_WHY)")"
+  else
+    printf '  %s\n\n' "Aucun type de projet reconnu dans ce dossier."
+  fi
+  local default=0
+  for p in $PROFILE_LIST; do
+    i=$((i + 1)); if [[ "$p" == "$DETECTED" ]]; then default=$i; fi
+    n="$(count_words "$(agents_of_groups "core $(conf_field profile "$p" 4)")")"
+    printf '    %s  %-10s %s  %s\n' "$(paint "1;$GREEN" "$i")" "$p" "$(paint "$GRAY" "$(printf '%2s agents' "$n")")" "$(conf_field profile "$p" 3)"
+  done
+  printf '    %s  %-10s %s  %s\n' "$(paint "1;$GREEN" $((i + 1)))" "tout" "$(paint "$GRAY" "$(printf '%2s agents' "$(count_words "$AGENT_LIST")")")" "Tous les agents"
+  printf '    %s  %-10s %s  %s\n\n' "$(paint "1;$GREEN" $((i + 2)))" "sur mesure" "$(paint "$GRAY" "         ")" "Choisir les groupes et les agents"
+  if [[ $default -eq 0 ]]; then default=$((i + 1)); fi
+  while :; do
+    choice="$(ask "Ton choix" "$default")"
+    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= i + 2 )); then break; fi
+    retry "Entre un numéro entre 1 et $((i + 2))."
+  done
+  echo
+  if (( choice <= i )); then TYPE="$(nth_word "$choice" "$PROFILE_LIST")"; return 0; fi
+  if (( choice == i + 1 )); then ALL=1; return 0; fi
+  printf '  %s\n' "Groupes (core est toujours installé) :"
+  local optional="${GROUP_LIST/core /}"
+  i=0
+  for g in $optional; do
+    i=$((i + 1))
+    printf '    %s  %-12s %s  %s\n' "$(paint "1;$GREEN" "$(printf '%2s' "$i")")" "$g" "$(paint "$GRAY" "($(count_words "$(agents_of_groups "$g")"))")" "$(conf_field group "$g" 3)"
+  done
+  echo
+  while :; do
+    nums="$(ask "Numéros des groupes, séparés par des espaces" "aucun")"; GROUPS_WANTED=""
+    if [[ "$nums" == aucun ]]; then break; fi
+    for n in $nums; do
+      if [[ "$n" =~ ^[0-9]+$ ]] && (( n >= 1 && n <= i )); then GROUPS_WANTED="$GROUPS_WANTED,$(nth_word "$n" "$optional")"; else GROUPS_WANTED="!"; break; fi
+    done
+    if [[ "$GROUPS_WANTED" != "!" ]]; then break; fi
+    retry "Numéros entre 1 et $i, séparés par des espaces."
+  done
+  extra="$(ask "Agents en plus, séparés par des virgules (ex. seo,payments)" "aucun")"
+  if [[ "$extra" != aucun ]]; then AGENTS_WANTED="$extra"; fi
+  echo
+  return 0
+}
+
+SELECTED_AGENTS=""; SELECTION_LABEL=""
+if [[ -z "$PROFILE_LIST" ]]; then
+  # Version de la bibliothèque sans profiles.conf : tous les agents, comme avant.
+  SELECTED_AGENTS="$AGENT_LIST"; SELECTION_LABEL="tous"
+else
+  detect_type
+  if [[ $ALL != 1 && -z "$TYPE$GROUPS_WANTED$AGENTS_WANTED" ]]; then
+    if [[ $YES != 1 && ( -n "${CLAUDE_LIB_TTY:-}" || -t 1 ) ]] && { exec 3<"$TTY_IN"; } 2>/dev/null; then
+      choose_menu
+      exec 3<&-
+    elif [[ -n "$DETECTED" ]]; then
+      TYPE="$DETECTED"
+    else
+      ALL=1
+    fi
+  fi
+  if [[ $ALL == 1 || "$TYPE" == all || "$TYPE" == tout ]]; then
+    SELECTED_AGENTS="$AGENT_LIST"; SELECTION_LABEL="tous"
+  else
+    WANTED_GROUPS="core"
+    if [[ -n "$TYPE" ]]; then
+      in_list "$TYPE" "$PROFILE_LIST" || die "Type de projet inconnu : $TYPE (types : ${PROFILE_LIST}all)."
+      WANTED_GROUPS="$WANTED_GROUPS $(conf_field profile "$TYPE" 4)"; SELECTION_LABEL="$TYPE"
+    fi
+    for g in $(printf '%s' "$GROUPS_WANTED" | tr ',' ' '); do
+      in_list "$g" "$GROUP_LIST" || die "Groupe inconnu : $g (groupes : ${GROUP_LIST% })."
+      WANTED_GROUPS="$WANTED_GROUPS $g"
+    done
+    if [[ -n "$GROUPS_WANTED" ]]; then
+      SELECTION_LABEL="${SELECTION_LABEL:-core} + $(printf '%s' "$GROUPS_WANTED" | tr -s ',' ' ' | sed 's/^ //; s/ $//; s/ /, /g')"
+    fi
+    SELECTED_AGENTS="$(agents_of_groups "$WANTED_GROUPS")"
+    for a in $(printf '%s' "$AGENTS_WANTED" | tr ',' ' '); do
+      in_list "$a" "$AGENT_LIST" || die "Agent inconnu : $a (voir la liste dans CLAUDE.md)."
+      in_list "$a" "$SELECTED_AGENTS" || SELECTED_AGENTS="$SELECTED_AGENTS$a "
+    done
+    if [[ -n "$AGENTS_WANTED" ]]; then SELECTION_LABEL="${SELECTION_LABEL:-core} + $(printf '%s' "$AGENTS_WANTED" | sed 's/,/, /g')"; fi
+    SELECTION_LABEL="${SELECTION_LABEL:-core}"
+  fi
+fi
+
+COPY_ITEMS=(skills standards templates workflows hooks)
 SKIPPED=""
 CLAUDE_DIR="$TARGET_DIR/.claude"
 mkdir -p "$CLAUDE_DIR"
+
+# Agents choisis, un par un : ceux déjà installés sont gardés (remplacés avec --force), et
+# un agent installé auparavant n'est jamais supprimé — on peut donc en ajouter plus tard.
+mkdir -p "$CLAUDE_DIR/agents"
+added=0; kept=0
+for a in $SELECTED_AGENTS; do
+  if [[ -f "$CLAUDE_DIR/agents/$a.md" && $FORCE -eq 0 ]]; then
+    kept=$((kept + 1))
+  else
+    cp "$SRC_DIR/agents/$a.md" "$CLAUDE_DIR/agents/$a.md.new"
+    mv "$CLAUDE_DIR/agents/$a.md.new" "$CLAUDE_DIR/agents/$a.md"
+    added=$((added + 1))
+  fi
+done
+task_start ".claude/agents/" "($(count_words "$SELECTED_AGENTS")/$(count_words "$AGENT_LIST") · $SELECTION_LABEL)"
+if [[ $added -eq 0 ]]; then
+  SKIPPED="${SKIPPED:+$SKIPPED, }.claude/agents/"
+  task_end SKIP
+else
+  task_end DONE
+fi
+if [[ -f "$PROFILES_FILE" ]]; then cp "$PROFILES_FILE" "$CLAUDE_DIR/profiles.conf"; fi
 
 for item in "${COPY_ITEMS[@]}"; do
   if [[ ! -d "$SRC_DIR/$item" ]]; then continue; fi
@@ -253,6 +444,10 @@ fi
 
 echo
 printf '  %s Bibliothèque installée dans %s\n' "$(paint "$BADGE_OK" ' SUCCESS ')" "$(paint 1 "$TARGET_DIR")"
+if [[ "$SELECTION_LABEL" != tous ]]; then
+  printf '  %s Agents : %s. Pour en ajouter plus tard : %s ou %s.\n' "$(paint "$BADGE_WARN" ' INFO ')" "$SELECTION_LABEL" \
+    "$(paint 1 '--agents <nom>')" "$(paint 1 '--groups <groupe>')"
+fi
 if [[ -n "$SKIPPED" ]]; then
   printf '  %s Déjà présents, conservés : %s. Relance avec %s pour les écraser.\n' \
     "$(paint "$BADGE_WARN" ' INFO ')" "$SKIPPED" "$(paint 1 '--force')"

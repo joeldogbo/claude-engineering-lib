@@ -45,11 +45,15 @@ Check "relance : code de sortie 0" ($r.Code -eq 0)
 Check "relance : dossiers existants ignores (SKIP)" ($r.Out -match 'SKIP')
 Check "relance : CLAUDE.md de la bibliotheque mis a cote" (Test-Path (Join-Path $p '.claude/CLAUDE.md.claude-engineering-lib'))
 
-# 3. -Force remplace proprement
-Set-Content -Path (Join-Path $p '.claude/agents/marqueur') -Value 'x'
+# 3. -Force remplace proprement (les agents ajoutes par l'utilisateur sont gardes)
+Set-Content -Path (Join-Path $p '.claude/skills/marqueur') -Value 'x'
+Set-Content -Path (Join-Path $p '.claude/agents/perso.md') -Value 'agent perso'
+Set-Content -Path (Join-Path $p '.claude/agents/git.md') -Value 'modifie'
 $r = Invoke-Install @('-TargetDir', $p, '-Force')
 Check "-Force : code de sortie 0" ($r.Code -eq 0)
-Check "-Force : ancien contenu remplace" (-not (Test-Path (Join-Path $p '.claude/agents/marqueur')))
+Check "-Force : ancien contenu remplace" (-not (Test-Path (Join-Path $p '.claude/skills/marqueur')))
+Check "-Force : agent de la bibliotheque remplace" ((Get-Content (Join-Path $p '.claude/agents/git.md') -Raw) -match '(?m)^name: git')
+Check "-Force : agent de l'utilisateur conserve" (Test-Path (Join-Path $p '.claude/agents/perso.md'))
 Check "-Force : aucun dossier .new residuel" (@(Get-ChildItem (Join-Path $p '.claude') -Filter '*.new' -Directory).Count -eq 0)
 
 # 4. Branche main
@@ -85,6 +89,64 @@ Check "-Source : hook enregistre dans settings.json" ($settingsText -match 'regu
 Check "-Source : reglages existants conserves" ($settingsText -match 'Bash\(ls\)')
 $null = Invoke-Install @('-Source', $root, '-TargetDir', $src)
 Check "-Source : hook enregistre une seule fois" (([regex]::Matches((Get-Content (Join-Path $src '.claude/settings.json') -Raw), 'regulator\.ps1')).Count -eq 1)
+
+# 8. Choix des agents selon le type de projet, les groupes, ou agent par agent
+function Get-Installed([string]$Dir) { @(Get-ChildItem (Join-Path $Dir '.claude/agents') -Filter *.md -ErrorAction SilentlyContinue | ForEach-Object { $_.BaseName }) }
+function Test-Has([string]$Dir, [string[]]$Names) { $in = Get-Installed $Dir; @($Names | Where-Object { $in -notcontains $_ }).Count -eq 0 }
+function Test-Lacks([string]$Dir, [string[]]$Names) { $in = Get-Installed $Dir; @($Names | Where-Object { $in -contains $_ }).Count -eq 0 }
+$total = @(Get-ChildItem (Join-Path $root 'agents') -Filter *.md).Count
+
+$mobile = Join-Path $work 'mobile'
+New-Item -ItemType Directory -Path $mobile | Out-Null
+Set-Content -Path (Join-Path $mobile 'pubspec.yaml') -Value 'name: app'
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $mobile)
+Check "type detecte (Flutter) : code de sortie 0" ($r.Code -eq 0)
+Check "type detecte (Flutter) : agents mobile" (Test-Has $mobile @('frontend', 'backend', 'security', 'project-context', 'language'))
+Check "type detecte (Flutter) : pas de SEO" (Test-Lacks $mobile @('seo', 'geo'))
+
+$api = Join-Path $work 'api'
+New-Item -ItemType Directory -Path $api | Out-Null
+Set-Content -Path (Join-Path $api 'package.json') -Value '{ "dependencies": { "express": "4" } }'
+$null = Invoke-Install @('-Source', $root, '-TargetDir', $api, '-Yes')
+Check "type detecte (API) : pas d'agent d'interface" (Test-Lacks $api @('frontend', 'ux-ui', 'seo'))
+Check "type detecte (API) : agents serveur" (Test-Has $api @('backend', 'api', 'database'))
+
+$groupsDir = Join-Path $work 'groupes'
+$null = Invoke-Install @('-Source', $root, '-TargetDir', $groupsDir, '-Groups', 'security,seo')
+Check "-Groups : socle + groupes demandes" (Test-Has $groupsDir @('project-context', 'code-reviewer', 'security', 'security-fixer', 'seo', 'geo'))
+Check "-Groups : rien d'autre" (Test-Lacks $groupsDir @('frontend', 'payments'))
+Check "-Groups : profiles.conf copie pour l'audit" (Test-Path (Join-Path $groupsDir '.claude/profiles.conf'))
+$null = Invoke-Install @('-Source', $root, '-TargetDir', $groupsDir, '-Agents', 'payments,manuals')
+Check "-Agents : ajout a une installation existante" (Test-Has $groupsDir @('payments', 'manuals', 'security', 'seo'))
+
+$allDir = Join-Path $work 'tout'
+$null = Invoke-Install @('-Source', $root, '-TargetDir', $allDir, '-Type', 'library', '-All')
+Check "-All : tous les agents" ((Get-Installed $allDir).Count -eq $total)
+
+$ko2 = Join-Path $work 'ko2'
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $ko2, '-Type', 'inconnu')
+Check "type inconnu : code de sortie non nul" ($r.Code -ne 0)
+Check "type inconnu : aucun dossier cree" (-not (Test-Path (Join-Path $ko2 '.claude')))
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $ko2, '-Agents', 'nimporte')
+Check "agent inconnu : code de sortie non nul" ($r.Code -ne 0)
+
+# Menu : << sur mesure >>, groupes 1 (docs) et 5 (performance), puis un agent en plus.
+$menu = Join-Path $work 'menu'
+New-Item -ItemType Directory -Path $menu | Out-Null
+Set-Content -Path (Join-Path $menu 'package.json') -Value '{ "dependencies": { "react-native": "0.74" } }'
+Set-Content -Path (Join-Path $work 'menu.in') -Value "7`n1 5`nseo"
+$env:CLAUDE_LIB_TTY = Join-Path $work 'menu.in'
+try { $r = Invoke-Install @('-Source', $root, '-TargetDir', $menu) } finally { $env:CLAUDE_LIB_TTY = $null }
+Check "menu : code de sortie 0" ($r.Code -eq 0)
+Check "menu : type detecte affiche" ($r.Out -match 'mobile \(package\.json')
+Check "menu : selection sur mesure" (Test-Has $menu @('project-context', 'documentation', 'manuals', 'performance', 'load-testing', 'seo'))
+Check "menu : rien hors selection" (Test-Lacks $menu @('frontend', 'security', 'geo'))
+$menuKo = Join-Path $work 'menu-ko'
+Set-Content -Path (Join-Path $work 'menu-ko.in') -Value "x`ny`nz"
+$env:CLAUDE_LIB_TTY = Join-Path $work 'menu-ko.in'
+try { $r = Invoke-Install @('-Source', $root, '-TargetDir', $menuKo) } finally { $env:CLAUDE_LIB_TTY = $null }
+Check "menu : reponses invalides, arret sans boucler" ($r.Code -ne 0)
+Check "menu : reponses invalides, rien d'ecrit" (-not (Test-Path (Join-Path $menuKo '.claude')))
 
 if ($script:fails -gt 0) {
     ""

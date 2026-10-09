@@ -8,6 +8,8 @@ on:
       - install.sh
       - install.ps1
       - hooks/**
+      - agents/**
+      - profiles.conf
       - .github/scripts/**
       - .github/workflows/install.yml
   pull_request:
@@ -15,6 +17,8 @@ on:
       - install.sh
       - install.ps1
       - hooks/**
+      - agents/**
+      - profiles.conf
       - .github/scripts/**
       - .github/workflows/install.yml
   workflow_dispatch:
