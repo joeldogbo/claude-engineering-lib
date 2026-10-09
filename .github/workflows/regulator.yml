@@ -1,19 +1,24 @@
 name: Régulateur
 
-# Vérifie les décisions du régulateur (bash et PowerShell, qui doivent concorder) et qu'aucun
-# agent n'est sans déclencheurs — à chaque modification d'un agent ou du hook.
+# Vérifie les décisions du régulateur (bash et PowerShell, qui doivent concorder) et que chaque
+# agent respecte les règles communes (déclencheurs, groupe, protocole, N1 existant) — à chaque
+# modification d'un agent ou du hook.
 on:
   push:
     branches: [main]
     paths:
       - hooks/**
       - agents/**
+      - profiles.conf
+      - standards/agent-protocol.md
       - .github/scripts/test-regulator.py
       - .github/workflows/regulator.yml
   pull_request:
     paths:
       - hooks/**
       - agents/**
+      - profiles.conf
+      - standards/agent-protocol.md
       - .github/scripts/test-regulator.py
       - .github/workflows/regulator.yml
   workflow_dispatch:

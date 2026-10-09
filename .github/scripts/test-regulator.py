@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 AGENTS = str(ROOT / "agents")
@@ -22,13 +23,23 @@ CASES = {
     "corrige l'erreur 500 sur la route /api/orders": ({"debugging", "api"}, set()),
     "SÉCURITÉ : vérifie les failles XSS du formulaire": ({"security"}, set()),
     "/workflow release": "silence",
+    "Rédige le manuel utilisateur et le manuel de déploiement": ({"manuals"}, set()),
+    "traduis l'interface en anglais": ({"language"}, set()),
+}
+
+# prompt -> fragments attendus dans la sortie : chaîne N1 → N2 affichée au contrôleur
+LEVELS = {
+    "audite la sécurité et corrige les failles XSS":
+        ["security (", "[N1 → security-fixer]", "security-fixer (", "[N2 de security]", "Niveaux :"],
+    "Ajoute un écran de profil avec un formulaire": ["[N2 de ux-ui, accessibility]"],
 }
 
 
-def run(shell, prompt):
+def run(shell, prompt, progress=None):
     payload = json.dumps({"prompt_text": prompt, "hook_event_name": "UserPromptSubmit",
-                          "cwd": "/tmp/agent-ia-chatbot-paiement"})  # le cwd ne doit jamais compter
-    env = dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS)
+                          "cwd": "/tmp/agent-ia-chatbot-paiement"},  # le cwd ne doit jamais compter
+                         ensure_ascii=False)  # UTF-8 brut, comme Claude Code (Node)
+    env = dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS, REGULATOR_PROGRESS_DIR=progress or str(ROOT / "absent"))
     # Chemin complet via le PATH : sous Windows, un nom nu trouverait le bash de WSL (System32) avant Git Bash.
     if shell == "bash":
         cmd = [shutil.which("bash") or "bash", (ROOT / "hooks" / "regulator.sh").as_posix()]
@@ -37,7 +48,7 @@ def run(shell, prompt):
     out = subprocess.run(cmd, input=payload.encode("utf-8"), capture_output=True, env=env, timeout=60)
     if out.returncode != 0:
         raise RuntimeError(f"{shell} a échoué : {out.stderr.decode('utf-8', 'replace')}")
-    return out.stdout.decode("utf-8", "replace").strip()
+    return out.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
 
 
 def selected(output):
@@ -64,16 +75,41 @@ for shell in shells:
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] {prompt[:60]!r} -> {sorted(got) or out[:60]}")
 
+    for prompt, fragments in LEVELS.items():
+        out = run(shell, prompt)
+        results.setdefault(prompt, {})[shell] = out
+        ok = all(f in out for f in fragments) and (("Niveaux :" in out) == ("Niveaux :" in fragments))
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] niveaux {prompt[:50]!r}" + ("" if ok else f" -> {out}"))
+
+    # Travail interrompu : seul le fichier « en cours » est signalé, même sans agent retenu.
+    with tempfile.TemporaryDirectory() as progress:
+        pathlib.Path(progress, "migration.md").write_text("# Migration\nstatut: en cours\n- [x] 1. schéma\n", encoding="utf-8")
+        pathlib.Path(progress, "ancien.md").write_text("# Ancien\nstatut: terminé\n", encoding="utf-8")
+        out = run(shell, "Merci", progress)
+        ok = "Travail interrompu" in out and "migration.md" in out and "ancien.md" not in out and "Aucun agent" in out
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] reprise d'un travail interrompu" + ("" if ok else f" -> {out}"))
+        ok = run(shell, "/workflow release", progress) == ""
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] commande slash silencieuse malgré la reprise")
+
 for prompt, by_shell in results.items():
-    if len({frozenset(v) for v in by_shell.values()}) > 1:
+    if len({v if isinstance(v, str) else frozenset(v) for v in by_shell.values()}) > 1:
         fails += 1
         print(f"FAIL versions en désaccord sur {prompt[:60]!r} : {by_shell}")
 
-audit = subprocess.run([shutil.which("bash") or "bash", (ROOT / "hooks" / "regulator.sh").as_posix(), "--audit"], capture_output=True,
-                       env=dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS)).stdout.decode("utf-8", "replace") \
-    if "bash" in shells else ""
-if "Sans déclencheurs" in audit:
-    fails += 1
-    print("FAIL agents sans déclencheurs :\n" + audit)
+# Règles communes obligatoires pour tout agent, ancien ou nouveau : déclencheurs (le contrôleur
+# doit pouvoir le retenir), groupe (installation par groupe), protocole commun, N1 existant.
+for shell in shells:
+    if shell == "bash":
+        cmd = [shutil.which("bash") or "bash", (ROOT / "hooks" / "regulator.sh").as_posix(), "--audit"]
+    else:
+        cmd = [shutil.which(shell) or shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "hooks" / "regulator.ps1"), "-Audit"]
+    audit = subprocess.run(cmd, capture_output=True, env=dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS))
+    ok = audit.returncode == 0
+    fails += not ok
+    print(f"{'ok  ' if ok else 'FAIL'} [{shell}] audit des règles communes des agents"
+          + ("" if ok else ":\n" + audit.stdout.decode("utf-8", "replace")))
 print(f"\n{fails} échec(s)." if fails else "\nTous les contrôles sont passés.")
 sys.exit(1 if fails else 0)
