@@ -14,4 +14,4 @@ Utilise le skill `cicd-pipeline`. Un pipeline doit : échouer vite (fail fast) s
 
 Ne déclenche jamais un déploiement réel en production ou une action irréversible sans confirmation explicite de l'utilisateur pour cette action précise.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

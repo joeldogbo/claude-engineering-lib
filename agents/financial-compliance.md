@@ -29,4 +29,4 @@ Un tableau, du plus risqué au moins risqué : fichier:ligne, extrait exact, typ
 
 Transmets les constats sur le chatbot à l'agent `ai-chatbot` (consignes et questions pièges à ajouter), sur les e-mails à l'agent `emails`, et sur les pages légales à l'agent `legal`.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

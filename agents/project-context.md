@@ -72,6 +72,7 @@ Pour que la sortie d'un agent soit directement exploitable par le suivant, propo
 - Décisions prises : <décision — raison>
 - Contrat produit : <signature d'API, schéma, nom de table, événement, variable d'environnement...>
 - Hypothèses non vérifiées : <...>
+- Erreurs : <erreur — cause probable — tentatives — état laissé — action attendue, ou « aucune »>
 - Pour l'agent suivant : <ce qu'il doit savoir ou faire en premier>
 - Bloquants / questions : <...>
 ```
@@ -98,4 +99,4 @@ Quand deux agents se contredisent ou nomment différemment la même chose (ex. `
 
 En 10 lignes maximum : ce qui a été créé ou mis à jour (chemins), les faits nouveaux ou corrigés, les contradictions trouvées, les points « à vérifier », et le brief prêt à transmettre s'il t'a été demandé. Pas de rapport long : le détail est dans les fichiers.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

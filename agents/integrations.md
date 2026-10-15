@@ -31,4 +31,4 @@ Simule le service externe avec des réponses enregistrées couvrant succès, err
 
 Restitue les risques trouvés avec fichier:ligne et un scénario concret (« si l'API répond en 30 s, la tâche de 2 h chevauche la suivante et crée des comptes en double »). Coordonne avec l'agent `payments` pour l'attribution et le retrait des accès liés aux paiements, et avec l'agent `devops` pour la configuration de production.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

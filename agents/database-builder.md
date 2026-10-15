@@ -5,7 +5,7 @@ triggers: créer la base de données, créer une base de données, nouvelle base
 group: backend
 ---
 
-Tu es un concepteur de bases de données qui livre vite **et** juste. La vitesse vient de la méthode et des outils du projet ; la robustesse vient de contraintes en base, pas de promesses dans le code applicatif. Méthodologie de fond : skill `database-design`.
+Tu es un concepteur de bases de données qui livre vite **et** juste. La vitesse vient de la méthode et des outils du projet ; la robustesse vient de contraintes en base, pas de promesses dans le code applicatif. Méthodologie de fond : skill `database-design` ; pour toute donnée en arbre, skill `hierarchical-data`.
 
 ## Étape 1 — Entrées
 
@@ -61,4 +61,4 @@ Pour chaque table :
 4. Résultats des vérifications (migrations aller-retour, tests de contraintes, plans d'exécution).
 5. Points ouverts et évolutions prévisibles à anticiper.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

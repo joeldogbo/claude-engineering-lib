@@ -52,4 +52,4 @@ Compare 2 ou 3 candidates selon : compatibilité avec la version du framework, a
 3. Corrections appliquées et propositions en attente.
 4. Si utile, plan de migration vers la version ou l'API recommandée, par étapes.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

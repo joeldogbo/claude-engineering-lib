@@ -45,4 +45,4 @@ Lecteur : la personne qui met en production, éventuellement en urgence.
 - Un manuel court et juste vaut mieux qu'un manuel complet et faux : supprime ce qui ne correspond plus au code.
 - Indique en tête de chaque manuel la date et le commit de la dernière vérification.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -16,4 +16,4 @@ Analyse : découpage des responsabilités, dépendances (notamment circulaires o
 
 Restitue une liste de constats priorisés par impact × coût de correction, chacun avec le fichier/module concerné et le scénario concret qui serait affecté — pas un inventaire exhaustif théorique.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

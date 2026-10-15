@@ -43,4 +43,4 @@ Rédige ensuite la politique de confidentialité **à partir de l'inventaire**, 
 - **Ne déclare aucune donnée collectée** que tu n'as pas vue dans le code.
 - Les fuites de données personnelles par sur-exposition (réponse d'API trop large, page publique, journal) sont des constats **de sécurité** : signale-les et laisse l'agent `security` les qualifier en sévérité plutôt que de traiter le sujet deux fois.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

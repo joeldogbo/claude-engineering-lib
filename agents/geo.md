@@ -13,4 +13,4 @@ Structure le contenu pour l'extraction : réponse directe et factuelle en tête 
 
 Ne traite pas ici le classement dans les résultats de recherche classiques (renvoie vers l'agent `seo`) ni l'accessibilité (renvoie vers l'agent `accessibility`) : concentre-toi sur la clarté factuelle et la structuration pour une synthèse par IA.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

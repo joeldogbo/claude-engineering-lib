@@ -39,4 +39,4 @@ Déclare le serveur dans `.mcp.json` à la racine (portée projet, partagée) ou
 
 La liste des outils et ressources (nom, rôle, entrées), les fichiers créés, la configuration ajoutée, les résultats des tests et de l'essai réel.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

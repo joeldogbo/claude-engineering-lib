@@ -14,4 +14,4 @@ Réutilise les composants/utilitaires déjà existants avant d'en créer de nouv
 
 Gère explicitement les états de chargement, d'erreur et vide de chaque vue qui dépend de données asynchrones. Écris les tests de composant/interaction pertinents (skill `test-strategy`) pour tout comportement non trivial.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

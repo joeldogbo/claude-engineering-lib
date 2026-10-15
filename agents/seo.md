@@ -13,4 +13,4 @@ Implémente et vérifie systématiquement, pour chaque page publique destinée �
 
 Ne duplique pas le travail des agents `performance` (Core Web Vitals, temps de chargement) et `accessibility` (sémantique HTML/ARIA) : appuie-toi sur leurs constats plutôt que de retraiter ces aspects superficiellement. Vérifie que les URLs sont stables, lisibles, et que tout changement d'URL passe par une redirection 301 plutôt que de casser des liens déjà indexés.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

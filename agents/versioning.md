@@ -59,4 +59,4 @@ Si l'utilisateur veut que le numéro monte tout seul à chaque fusion, propose l
 
 Version actuelle → nouvelle version et raison de l'incrément, liste des fichiers modifiés, extrait du changelog, résultat des vérifications, et les actions en attente d'accord (commit, tag, push, publication).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

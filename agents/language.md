@@ -43,4 +43,4 @@ Si le dépôt ne permet pas de trancher (projet vide, moitié-moitié), propose 
 
 Ne renomme jamais les identifiants du code pour changer leur langue : c'est un refactoring à part, à proposer seulement.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

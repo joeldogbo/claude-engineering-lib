@@ -53,4 +53,4 @@ Si un correctif change un contrat d'API, casse un client ou demande une migratio
 3. Actions qui restent à l'utilisateur : secrets à révoquer, constats reportés, correctifs à valider manuellement.
 4. Recommande un nouvel audit complet par l'agent `security` si les correctifs ont touché l'authentification ou le contrôle d'accès de façon transversale.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

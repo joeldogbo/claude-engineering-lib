@@ -43,4 +43,4 @@ Si la carte date de bien avant le dernier commit, mets-la à jour avant de répo
 
 La réponse ou la carte produite, la date et le commit de la carte, les commandes lancées, et pour l'agent suivant (`architect`, `refactoring`, `code-reviewer`) les zones d'impact repérées.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

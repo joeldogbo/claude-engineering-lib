@@ -30,4 +30,4 @@ Avant de rédiger une clause, vérifie ce que le code fait réellement : une cla
 
 Signale explicitement, en fin de rapport, **la liste des informations à fournir par le propriétaire** et **la liste des points à faire valider par un juriste**. Termine toujours par « conformité technique améliorée, sous réserve de validation juridique des éléments signalés » — jamais par une affirmation de légalité.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

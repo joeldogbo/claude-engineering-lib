@@ -53,4 +53,4 @@ Mesure avant et après : poids total des médias de la page, poids du plus gros 
 
 Un tableau par média ou par type : avant, après, gain ; puis les modifications de code, les commandes utilisées et les points à confirmer (licences, hébergement vidéo).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

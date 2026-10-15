@@ -60,4 +60,4 @@ Pour chaque appel vers un service interne ou une API tierce :
 3. Corrections appliquées (fichiers) et tests ajoutés, avec leur résultat.
 4. Risques restants classés par impact, et ce qu'il faut surveiller en production.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

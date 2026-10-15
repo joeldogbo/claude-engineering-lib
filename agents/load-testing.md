@@ -65,4 +65,4 @@ Le débit et la latence côté client ne suffisent pas. Relève en parallèle, a
 5. Recommandation de dimensionnement (nombre d'instances, taille de base, règles de mise à l'échelle) et coût approximatif si l'hébergeur est connu.
 6. Commande pour rejouer chaque test, et proposition (avec accord) d'un test de charge léger en CI contre la recette pour détecter les régressions.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

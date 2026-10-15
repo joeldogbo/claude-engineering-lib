@@ -58,4 +58,4 @@ Pour chaque option : avantages, limites (démarrage à froid du serverless, dur�
 4. Estimation du coût mensuel au lancement et à la croissance visée, avec sources.
 5. Checklist de mise en ligne, dans l'ordre, et ce que l'agent `devops` devra mettre en place.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -15,4 +15,4 @@ Pour la conception d'API, utilise le skill `api-design` ; pour l'accès aux donn
 
 Écris les tests correspondants (skill `test-strategy`) pour tout comportement métier non trivial ajouté ou modifié.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

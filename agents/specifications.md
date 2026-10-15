@@ -55,4 +55,4 @@ Si on te fournit un document existant : relève les ambiguïtés, contradictions
 
 Le chemin du document, un résumé en 5 lignes (objectif, périmètre du MVP, nombre d'exigences par priorité), les questions ouvertes qui bloquent, et les hypothèses que l'utilisateur doit valider.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

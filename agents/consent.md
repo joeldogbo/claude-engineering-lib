@@ -45,4 +45,4 @@ Le consentement enregistré doit porter sa **date**, sa **version** (pour redema
 
 Détecte les conventions du projet (gestion d'état, composants, style) et suis-les. Réutilise les composants existants plutôt que d'introduire une bibliothèque tierce, sauf si le projet en utilise déjà une. Rédige la page de politique de cookies à partir de l'inventaire de l'étape 1, et laisse en `TODO` toute durée ou finalité que le code ne permet pas d'établir.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

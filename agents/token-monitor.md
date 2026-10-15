@@ -35,4 +35,4 @@ Ne convertis jamais en euros avec des tarifs cités de mémoire. Pour le coût d
 
 Le total de la période, les trois postes qui pèsent le plus avec leurs chiffres, puis au plus trois actions classées par gain attendu. Pas de tableau brut recopié : l'utilisateur veut savoir quoi changer.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

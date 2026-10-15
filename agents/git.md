@@ -54,4 +54,4 @@ Règles de l'accord :
 
 Termine par un état court : commits créés (hash court et message), branche, push effectué ou en attente d'accord, et prochaine étape éventuelle (ouvrir une pull request avec le gabarit [pr-description.md](../templates/pr-description.md), par exemple).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

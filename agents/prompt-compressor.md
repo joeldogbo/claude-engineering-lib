@@ -57,4 +57,4 @@ Ce n'est pas un compresseur de prompt : propose-le **en complément** quand le c
 
 Un tableau : fichier, taille avant, taille après, gain estimé, fréquence de chargement. Puis la correspondance des règles, et les passages que tu as volontairement **laissés longs** parce que les raccourcir les rendrait ambigus.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

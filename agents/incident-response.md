@@ -45,4 +45,4 @@ Rédige `docs/incidents/<date>-<sujet>.md` : chronologie horodatée, impact (dur
 
 Pendant l'incident : un point d'étape court à chaque changement d'état (impact, mesure prise, prochaine étape). Après : le lien vers le post-mortem et la liste des actions préventives.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

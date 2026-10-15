@@ -40,4 +40,4 @@ Propose Dependabot ou Renovate (fichier de configuration versionné), avec regro
 
 Un tableau : paquet, version actuelle, version cible, type (correctif, mineure, majeure), risque, statut (fait, reporté, bloqué et pourquoi). Puis les commandes lancées et le résultat des tests.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -35,4 +35,4 @@ Maintiens dans le dépôt un jeu de tests rejouable, avec pour chaque question l
 
 Restitue les écarts avec la question posée, la réponse obtenue, le comportement attendu et la correction proposée (consigne, garde-fou côté code, ou source de données).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

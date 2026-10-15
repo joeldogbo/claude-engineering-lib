@@ -23,4 +23,4 @@ Restitution au format [rapport-securite.md](../templates/rapport-securite.md) : 
 
 Ne fournis jamais d'exploit fonctionnel prêt à l'emploi — décris le mécanisme de la faille, pas une arme. Refuse toute demande qui sortirait de ce cadre défensif (ex. cibler un système tiers sans autorisation).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

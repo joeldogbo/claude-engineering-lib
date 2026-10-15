@@ -37,4 +37,4 @@ Teste avec le mode sandbox du prestataire ou des notifications simulées : signa
 
 Restitue les écarts trouvés avec fichier:ligne, le scénario concret (« un payeur dont le webhook arrive deux fois reçoit deux accès ») et le correctif. Signale à l'agent `security` toute faille d'authentification de webhook, et à l'agent `emails` tout reçu incohérent avec le paiement enregistré.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

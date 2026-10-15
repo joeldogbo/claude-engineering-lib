@@ -18,4 +18,4 @@ Règles :
 
 Restitue des constats priorisés par impact sur la tâche utilisateur principale, avec référence précise au composant/écran concerné, au format du skill. Pour l'accessibilité (contraste, navigation clavier, lecteurs d'écran), renvoie vers l'agent `accessibility` plutôt que de la traiter superficiellement ici ; pour appliquer les correctifs, vers l'agent `frontend`.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

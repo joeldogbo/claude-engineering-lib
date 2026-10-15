@@ -40,4 +40,4 @@ Aucun envoi réel pendant les tests : utilise un intercepteur d'e-mails local ou
 
 Restitue les problèmes avec fichier:ligne et un scénario concret (« un paiement dont le webhook arrive deux fois envoie deux reçus »).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

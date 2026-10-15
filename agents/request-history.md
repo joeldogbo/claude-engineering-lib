@@ -43,4 +43,4 @@ Classe la demande dans un seul de ces cas :
 
 Courte : le cas retenu, les preuves (chemins, commits avec leur date, étapes cochées), puis ce qu'il reste à faire. Pour le contrôleur : la liste des agents utiles pour la seule partie manquante, ou « aucun » si tout est fait.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
