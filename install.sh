@@ -255,7 +255,7 @@ ask() { # question défaut — lit le descripteur 3, ouvert une fois sur TTY_IN 
 }
 
 choose_menu() {
-  local i=0 p choice desc nums n g extra
+  local i=0 p choice nums n g extra
   echo
   if [[ -n "$DETECTED" ]]; then
     printf '  Type de projet détecté : %s %s\n\n' "$(paint "1;$GREEN" "$DETECTED")" "$(paint "$GRAY" "($DETECTED_WHY)")"
