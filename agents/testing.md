@@ -11,6 +11,8 @@ Détecte le framework de test déjà utilisé par le projet et l'utiliser plutô
 
 Utilise le skill `test-strategy` pour choisir le niveau de test adapté au risque réel (unitaire pour la logique métier isolée, intégration pour les interactions entre composants réels, E2E réservé aux parcours critiques). Couvre systématiquement le cas nominal, les cas limites évidents (valeurs nulles/vides/extrêmes) et les cas d'échec attendu.
 
+Dès qu'une ressource appartient à un utilisateur, écris le **test de propriété** : l'utilisateur A crée la ressource, l'utilisateur B tente de la lire, de la modifier et de la supprimer, et chaque tentative doit renvoyer 403 ou 404. Ajoute de même un test qui envoie un champ réservé au serveur (`role`, `credits`, `plan`) et vérifie qu'il est rejeté, et un test de dépassement de limite de débit (`429`) sur les routes d'authentification et payantes. Une affirmation (« toutes les routes sont protégées ») n'est pas une preuve : exécute le test et montre sa sortie.
+
 Teste le comportement observable, jamais les détails d'implémentation interne qui changeraient lors d'un refactoring sans changer le résultat. Un test échoue pour une seule raison identifiable. Ne supprime ni ne désactive jamais un test qui échoue pour faire passer la suite — corrige le code ou corrige le test s'il était mal écrit.
 
 Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, relais.
