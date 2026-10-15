@@ -18,12 +18,18 @@ curl -fsSL https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/ma
 iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex
 ```
 
-Le script télécharge la dernière release (ou la branche `main` si aucune release n'existe encore) et copie les dossiers `agents/`, `skills/`, `standards/`, `templates/`, `workflows/` ainsi que `CLAUDE.md` dans le dossier `.claude/` du dépôt courant — là où Claude Code les découvre — **sans écraser** ce qui existe déjà. Le `CLAUDE.md` propre au projet, à la racine, n'est pas touché : Claude Code charge les deux.
+Le script télécharge la dernière release (ou la branche `main` si aucune release n'existe encore) et copie les dossiers `agents/`, `skills/`, `standards/`, `templates/`, `workflows/` ainsi que `CLAUDE.md` dans le dossier `.claude/` du dépôt courant — là où Claude Code les découvre — **sans écraser** tes modifications. Le `CLAUDE.md` propre au projet, à la racine, n'est pas touché : Claude Code charge les deux.
 
 Options utiles :
 
 ```bash
-# Écraser les fichiers existants
+# Mettre à jour une installation existante (échoue s'il n'y en a pas)
+curl -fsSL .../install.sh | bash -s -- --update
+
+# Voir ce qui changerait, sans rien écrire
+curl -fsSL .../install.sh | bash -s -- --dry-run
+
+# Remplacer aussi les fichiers modifiés localement (anciennes versions sauvegardées)
 curl -fsSL .../install.sh | bash -s -- --force
 
 # Installer une version précise
@@ -33,7 +39,7 @@ curl -fsSL .../install.sh | bash -s -- --version v1.2.0
 curl -fsSL .../install.sh | bash -s -- --dir ./mon-projet
 ```
 
-Équivalents PowerShell : `-Force`, `-Version v1.2.0`, `-TargetDir ./mon-projet`. Pour les passer à l'installation en une commande :
+Équivalents PowerShell : `-Update`, `-DryRun`, `-Force`, `-Version v1.2.0`, `-TargetDir ./mon-projet` (ou `$env:CLAUDE_LIB_UPDATE=1`, `$env:CLAUDE_LIB_DRY_RUN=1` avant `iwr ... | iex`). Pour les passer à l'installation en une commande :
 
 ```powershell
 & ([scriptblock]::Create((iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1))) -Force -Version v1.2.0
@@ -68,7 +74,27 @@ curl -fsSL .../install.sh | bash -s -- --agents payments,manuals  # ajouter des 
 curl -fsSL .../install.sh | bash -s -- --all                      # tous les agents
 ```
 
-Équivalents PowerShell : `-Type mobile`, `-Groups security,seo`, `-Agents payments,manuals`, `-All`, `-Yes` ; pour l'installation en une commande, `$env:CLAUDE_LIB_TYPE='mobile'` (ou `CLAUDE_LIB_GROUPS`, `CLAUDE_LIB_AGENTS`, `CLAUDE_LIB_ALL=1`) avant `iwr ... | iex`. Une relance n'enlève jamais un agent déjà installé : elle ajoute ceux qui manquent, et `--force` remplace les agents choisis par leur dernière version.
+Équivalents PowerShell : `-Type mobile`, `-Groups security,seo`, `-Agents payments,manuals`, `-All`, `-Yes` ; pour l'installation en une commande, `$env:CLAUDE_LIB_TYPE='mobile'` (ou `CLAUDE_LIB_GROUPS`, `CLAUDE_LIB_AGENTS`, `CLAUDE_LIB_ALL=1`) avant `iwr ... | iex`. Une relance garde la sélection déjà installée et y ajoute ce qui est demandé.
+
+### Mettre à jour
+
+Relancer la commande d'installation dans un projet déjà équipé le **met à jour** (`--update` / `-Update` l'exige, `--dry-run` / `-DryRun` montre le plan sans rien écrire). Depuis Claude Code, `/library-update [version]` fait la simulation, applique après ton accord puis t'aide à fusionner les conflits.
+
+L'installateur note dans `.claude/.claude-lib.manifest` la version installée, les groupes choisis et l'empreinte de chaque fichier. À la mise à jour, chaque fichier suit ces règles :
+
+| Situation | Résultat |
+|---|---|
+| Inchangé chez toi, nouvelle version dans la bibliothèque | Remplacé ; ancienne version dans `.claude/backups/<date>/` |
+| Modifié chez toi, inchangé dans la bibliothèque | Conservé |
+| Modifié chez toi **et** dans la bibliothèque | Conservé ; nouvelle version dans `.claude/updates/<fichier>.new`, à fusionner (`--force` remplace, après sauvegarde) |
+| Retiré de la bibliothèque | Supprimé s'il n'a pas été modifié (sauvegardé), conservé sinon |
+| Agent que tu as supprimé | Pas réinstallé, sauf `--agents <nom>` |
+| Nouvel agent d'un groupe installé | Ajouté |
+| Tes propres fichiers | Jamais touchés |
+| Version demandée plus ancienne que l'installée | Refusé, sauf `--force` |
+| Installation antérieure au manifeste | Fichiers différents remplacés après sauvegarde, sauf `CLAUDE.md` (mis en conflit) |
+
+**En cas d'erreur**, rien n'est laissé à moitié : prérequis (outils, droits d'écriture, version, archive) vérifiés avant toute écriture ; fichiers copiés à côté puis remplacés ; toute erreur ou interruption (Ctrl+C) restaure l'état d'avant ; chaque fichier écrit est revérifié par son empreinte ; un verrou empêche deux installations simultanées. Les 5 dernières sauvegardes sont gardées, hors de git. Les deux installateurs partagent le même manifeste : on peut installer avec l'un et mettre à jour avec l'autre.
 
 ### Installation manuelle
 

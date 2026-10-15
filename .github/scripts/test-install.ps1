@@ -49,23 +49,26 @@ Check "installation : routeur de workflows present" (Test-Path (Join-Path $p '.c
 Check "installation : .claude/CLAUDE.md present" (Test-Path (Join-Path $p '.claude/CLAUDE.md'))
 Check "installation : CLAUDE.md du projet intact" ((Get-Content (Join-Path $p 'CLAUDE.md')) -eq 'projet perso')
 Check "installation : rien copie a la racine" (-not (Test-Path (Join-Path $p 'agents')))
+Check "installation : manifeste ecrit" ((Get-Content (Join-Path $p '.claude/.claude-lib.manifest') -Raw) -match '(?m)^@version ')
 
-# 2. Relance sans -Force : rien n'est ecrase
+# 2. Relance : mise a jour, rien a changer
 $r = Invoke-Install @('-TargetDir', $p)
 Check "relance : code de sortie 0" ($r.Code -eq 0)
-Check "relance : dossiers existants ignores (SKIP)" ($r.Out -match 'SKIP')
-Check "relance : CLAUDE.md de la bibliotheque mis a cote" (Test-Path (Join-Path $p '.claude/CLAUDE.md.claude-engineering-lib'))
+Check "relance : detectee comme mise a jour" ($r.Out -match 'Installation existante')
+Check "relance : rien a faire (SKIP)" ($r.Out -match 'SKIP')
+Check "relance : aucune sauvegarde inutile" (-not (Test-Path (Join-Path $p '.claude/backups')))
 
-# 3. -Force remplace proprement (les agents ajoutes par l'utilisateur sont gardes)
+# 3. -Force remplace les fichiers modifies, apres sauvegarde ; les fichiers de l'utilisateur restent
 Set-Content -Path (Join-Path $p '.claude/skills/marqueur') -Value 'x'
 Set-Content -Path (Join-Path $p '.claude/agents/perso.md') -Value 'agent perso'
 Set-Content -Path (Join-Path $p '.claude/agents/git.md') -Value 'modifie'
 $r = Invoke-Install @('-TargetDir', $p, '-Force')
 Check "-Force : code de sortie 0" ($r.Code -eq 0)
-Check "-Force : ancien contenu remplace" (-not (Test-Path (Join-Path $p '.claude/skills/marqueur')))
+Check "-Force : fichier de l'utilisateur conserve" (Test-Path (Join-Path $p '.claude/skills/marqueur'))
 Check "-Force : agent de la bibliotheque remplace" ((Get-Content (Join-Path $p '.claude/agents/git.md') -Raw) -match '(?m)^name: git')
+Check "-Force : ancienne version sauvegardee" (@(Get-ChildItem (Join-Path $p '.claude/backups') -Recurse -Filter git.md -ErrorAction SilentlyContinue | Where-Object { (Get-Content $_.FullName -Raw) -match 'modifie' }).Count -eq 1)
 Check "-Force : agent de l'utilisateur conserve" (Test-Path (Join-Path $p '.claude/agents/perso.md'))
-Check "-Force : aucun dossier .new residuel" (@(Get-ChildItem (Join-Path $p '.claude') -Filter '*.new' -Directory).Count -eq 0)
+Check "-Force : aucun residu de copie" (-not (Test-Path (Join-Path $p '.claude/.claude-lib-staging')) -and -not (Test-Path (Join-Path $p '.claude/.claude-lib.lock')))
 
 # 4. Branche main
 $r = Invoke-Install @('-Version', 'main', '-TargetDir', (Join-Path $work 'main'))
@@ -158,6 +161,81 @@ $env:CLAUDE_LIB_TTY = Join-Path $work 'menu-ko.in'
 try { $r = Invoke-Install @('-Source', $root, '-TargetDir', $menuKo) } finally { $env:CLAUDE_LIB_TTY = $null }
 Check "menu : reponses invalides, arret sans boucler" ($r.Code -ne 0)
 Check "menu : reponses invalides, rien d'ecrit" (-not (Test-Path (Join-Path $menuKo '.claude')))
+
+# 9. Mise a jour : une << nouvelle version >> de la bibliotheque, preparee dans une copie
+function Get-Tree([string]$Dir) {
+    # Chemins et empreintes, hors sauvegardes : sert a verifier que rien n'a change.
+    $base = (Resolve-Path $Dir).Path
+    (@(Get-ChildItem $base -Recurse -File -Force | Where-Object { $_.FullName -notmatch '[\\/]backups[\\/]' } | ForEach-Object {
+        $_.FullName.Substring($base.Length) + ' ' + (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+    }) | Sort-Object) -join "`n"
+}
+function Test-Contains([string]$File, [string]$Text) { (Test-Path $File) -and ((Get-Content $File -Raw) -match $Text) }
+$v1 = Join-Path $work 'v1'; $v2 = Join-Path $work 'v2'; $u = Join-Path $work 'maj'
+New-Item -ItemType Directory -Path $v1 | Out-Null
+foreach ($item in 'CLAUDE.md', 'agents', 'skills', 'standards', 'templates', 'workflows', 'hooks', 'profiles.conf') { Copy-Item (Join-Path $root $item) $v1 -Recurse }
+Copy-Item $v1 $v2 -Recurse
+$null = Invoke-Install @('-Source', $v1, '-TargetDir', $u, '-Groups', 'security')
+Add-Content (Join-Path $v2 'agents/git.md') 'evolution'                                   # change dans la bibliotheque seulement
+Add-Content (Join-Path $v2 'agents/code-reviewer.md') 'evolution'; Add-Content (Join-Path $u '.claude/agents/code-reviewer.md') 'perso' # des deux cotes
+Add-Content (Join-Path $u '.claude/agents/refactoring.md') 'perso'                         # chez l'utilisateur seulement
+Remove-Item (Join-Path $v2 'agents/security-fixer.md')                                     # retire de la bibliotheque
+Set-Content (Join-Path $v2 'agents/nouveau.md') "---`nname: nouveau`ndescription: x`ntriggers: zzz`ngroup: security`n---`nx"
+Remove-Item (Join-Path $u '.claude/agents/debugging.md')                                   # supprime par l'utilisateur
+$before = Get-Tree $u
+
+$r = Invoke-Install @('-Source', $v2, '-TargetDir', $u, '-DryRun')
+Check "-DryRun : code de sortie 0" ($r.Code -eq 0)
+Check "-DryRun : plan affiche" ($r.Out -match 'agents/git\.md')
+Check "-DryRun : rien d'ecrit" ((Get-Tree $u) -eq $before)
+
+$env:CLAUDE_LIB_TEST_FAIL_AT = '2'
+try { $r = Invoke-Install @('-Source', $v2, '-TargetDir', $u) } finally { $env:CLAUDE_LIB_TEST_FAIL_AT = $null }
+Check "panne en cours d'ecriture : code de sortie non nul" ($r.Code -ne 0)
+Check "panne en cours d'ecriture : etat d'avant restaure" ((Get-Tree $u) -eq $before)
+
+$r = Invoke-Install @('-Source', $v2, '-TargetDir', $u, '-Update')
+$cl = Join-Path $u '.claude'
+Check "-Update : code de sortie 0" ($r.Code -eq 0)
+Check "-Update : fichier non modifie mis a jour" (Test-Contains (Join-Path $cl 'agents/git.md') 'evolution')
+Check "-Update : ancienne version sauvegardee" (@(Get-ChildItem (Join-Path $cl 'backups') -Recurse -Filter git.md -ErrorAction SilentlyContinue).Count -gt 0)
+Check "-Update : modification de l'utilisateur conservee" (Test-Contains (Join-Path $cl 'agents/code-reviewer.md') 'perso')
+Check "-Update : conflit signale (MERGE)" ($r.Out -match 'MERGE')
+Check "-Update : nouvelle version mise a cote" (Test-Contains (Join-Path $cl 'updates/agents/code-reviewer.md.new') 'evolution')
+Check "-Update : modification sans conflit conservee" (Test-Contains (Join-Path $cl 'agents/refactoring.md') 'perso')
+Check "-Update : pas de copie a fusionner sans conflit" (-not (Test-Path (Join-Path $cl 'updates/agents/refactoring.md.new')))
+Check "-Update : agent retire de la bibliotheque supprime" (-not (Test-Path (Join-Path $cl 'agents/security-fixer.md')))
+Check "-Update : nouvel agent d'un groupe installe ajoute" (Test-Path (Join-Path $cl 'agents/nouveau.md'))
+Check "-Update : agent supprime par l'utilisateur non reinstalle" (-not (Test-Path (Join-Path $cl 'agents/debugging.md')))
+Check "-Update : sauvegardes hors de git" (Test-Path (Join-Path $cl 'backups/.gitignore'))
+Check "-Update : manifeste en fins de ligne LF (lu par install.sh)" (-not ([IO.File]::ReadAllText((Join-Path $cl '.claude-lib.manifest')).Contains("`r")))
+
+$null = Invoke-Install @('-Source', $v2, '-TargetDir', $u, '-Agents', 'debugging')
+Check "-Agents : agent supprime reinstalle a la demande" (Test-Path (Join-Path $cl 'agents/debugging.md'))
+$null = Invoke-Install @('-Source', $v2, '-TargetDir', $u, '-Force')
+Check "-Force : conflit remplace" (Test-Contains (Join-Path $cl 'agents/code-reviewer.md') 'evolution')
+
+$none = Join-Path $work 'rien'
+$r = Invoke-Install @('-Source', $v2, '-TargetDir', $none, '-Update')
+Check "-Update sans installation : code de sortie non nul" ($r.Code -ne 0)
+Check "-Update sans installation : aucun dossier cree" (-not (Test-Path (Join-Path $none '.claude')))
+$manifest = Join-Path $cl '.claude-lib.manifest'
+[IO.File]::WriteAllText($manifest, ([IO.File]::ReadAllText($manifest) -replace '(?m)^@version .*$', '@version v99.0.0'))
+$r = Invoke-Install @('-Version', 'v1.0.0', '-TargetDir', $u)
+Check "version plus ancienne : refusee sans -Force" ($r.Code -ne 0)
+Check "version plus ancienne : message explicite" ($r.Out -match 'plus r.cente')
+New-Item -ItemType Directory -Path (Join-Path $cl '.claude-lib.lock') | Out-Null
+$r = Invoke-Install @('-Source', $v2, '-TargetDir', $u)
+Check "installation simultanee : refusee" ($r.Code -ne 0)
+Remove-Item (Join-Path $cl '.claude-lib.lock')
+
+# Installation anterieure au manifeste : les anciennes versions sont remplacees apres sauvegarde
+Remove-Item $manifest
+Add-Content (Join-Path $cl 'agents/testing.md') 'ancienne'
+$r = Invoke-Install @('-Source', $v2, '-TargetDir', $u)
+Check "sans manifeste : code de sortie 0" ($r.Code -eq 0)
+Check "sans manifeste : ancienne version remplacee" (-not (Test-Contains (Join-Path $cl 'agents/testing.md') 'ancienne'))
+Check "sans manifeste : manifeste cree" (Test-Path $manifest)
 
 if ($script:fails -gt 0) {
     ""

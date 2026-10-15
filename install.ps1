@@ -8,8 +8,11 @@
 #   & ([scriptblock]::Create((iwr -useb .../install.ps1))) -Force -Version v1.2.0
 #
 # Ou en local:
+#   .\install.ps1 -Update                     # met a jour une installation existante
+#   .\install.ps1 -DryRun                     # montre ce qui changerait, sans rien ecrire
 #   .\install.ps1 -Force -Version v1.2.0 -TargetDir .
 #   .\install.ps1 -Source .\claude-engineering-lib    # depuis une copie locale (tests, CI)
+# En une commande : $env:CLAUDE_LIB_UPDATE=1 ou $env:CLAUDE_LIB_DRY_RUN=1 avant iwr ... | iex.
 #
 # Choix des agents (groupes et profils decrits dans profiles.conf) :
 #   -Type web|mobile|api|desktop|library   agents adaptes au type de projet
@@ -20,6 +23,19 @@
 # Sans option, un menu propose le type detecte dans le projet. Pour l'installation en une
 # commande, les memes choix passent par les variables d'environnement CLAUDE_LIB_TYPE,
 # CLAUDE_LIB_GROUPS, CLAUDE_LIB_AGENTS, CLAUDE_LIB_ALL=1 et CLAUDE_LIB_YES=1.
+#
+# Mise a jour : relancer l'installateur dans un projet deja equipe le met a jour (-Update
+# l'exige). Le manifeste .claude/.claude-lib.manifest (meme format qu'install.sh) garde la
+# version et l'empreinte de chaque fichier installe, ce qui permet, pour chaque fichier :
+#   - inchange chez toi, nouvelle version dans la bibliotheque -> remplace (ancien sauvegarde) ;
+#   - modifie chez toi -> conserve, nouvelle version dans .claude/updates/<fichier>.new
+#     (-Force le remplace, apres sauvegarde) ;
+#   - retire de la bibliotheque -> supprime s'il n'a pas ete modifie, conserve sinon ;
+#   - agent supprime par toi -> pas reinstalle (sauf -Agents <nom>) ;
+#   - nouvel agent d'un groupe installe -> ajoute ; tes propres fichiers -> jamais touches.
+# Revenir a une version plus ancienne que celle installee exige -Force.
+# Toute erreur ou interruption en cours d'ecriture restaure l'etat d'avant ; les fichiers
+# remplaces restent dans .claude/backups/<date>/ (les 5 dernieres sauvegardes sont gardees).
 # Ne pas ecrire ici la commande en une ligne suivie d'un commentaire : Windows Defender (AMSI)
 # a bloque tout le script pour cette seule phrase (constate sous Windows 11, octobre 2026).
 #
@@ -29,6 +45,8 @@
 
 param(
     [switch]$Force,
+    [switch]$Update,
+    [switch]$DryRun,
     [string]$Version = "",
     [string]$TargetDir = (Get-Location).Path,
     # Copie locale de la bibliotheque a installer a la place du telechargement (tests, CI, depot clone).
@@ -51,6 +69,8 @@ $__claudeLibInstall = @{ Failed = $false }
     $ProgressPreference = "SilentlyContinue"
     $Repo = "joeldogbo/claude-engineering-lib"
     if ($env:CLAUDE_LIB_FORCE) { $Force = $true }
+    if ($env:CLAUDE_LIB_UPDATE -eq '1') { $Update = $true }
+    if ($env:CLAUDE_LIB_DRY_RUN -eq '1') { $DryRun = $true }
     if ($env:CLAUDE_LIB_ALL -eq '1') { $All = $true }
     if ($env:CLAUDE_LIB_YES -eq '1') { $Yes = $true }
     if (-not $Type -and $env:CLAUDE_LIB_TYPE) { $Type = $env:CLAUDE_LIB_TYPE }
@@ -87,24 +107,33 @@ $__claudeLibInstall = @{ Failed = $false }
         return $Text
     }
 
+    # Banniere DOGBO Engineering Library : logo "D" au </> en degrade bleu, puis DOGBO en blanc.
+    # Un pixel = deux caracteres ; "C" marque les trois pixels du </>. Largeur : 78 colonnes.
     function Show-Banner([string]$Label) {
-        $rows = @(
-            ' XXXX X      XXX  X   X XXXX  XXXXX',
-            'X     X     X   X X   X X   X X    ',
-            'X     X     XXXXX X   X X   X XXXX ',
-            'X     X     X   X X   X X   X X    ',
-            ' XXXX XXXXX X   X  XXX  XXXX  XXXXX'
+        $logo = @('XXXXX  ', 'XX  XX ', 'XX   XX', 'XXCXX', 'XX   XX', 'XX  XX ', 'XXXXX  ')
+        $word = @(
+            '                             ',
+            'XXXX   XXX   XXXX XXXX   XXX ',
+            'X   X X   X X     X   X X   X',
+            'X   X X   X X  XX XXXX  X   X',
+            'X   X X   X X   X X   X X   X',
+            'XXXX   XXX   XXXX XXXX   XXX ',
+            '                             '
         )
-        $shades = @('38;5;120', '38;5;84', '38;5;48', '38;5;41', '38;5;35')
+        $shades = @('38;5;51', '38;5;45', '38;5;39', '38;5;33', '38;5;33', '38;5;27', '38;5;27')
+        $toPixels = { param([string]$Row) $Row.Replace(' ', '  ').Replace('X', $Pixel) }
         Write-Host ""
-        for ($i = 0; $i -lt $rows.Count; $i++) {
-            $line = $rows[$i].Replace(' ', '  ').Replace('X', $Pixel)
-            Write-Host ("  " + (Paint $line $shades[$i]))
+        for ($i = 0; $i -lt $logo.Count; $i++) {
+            $parts = $logo[$i].Split('C')
+            $mark = Paint (& $toPixels $parts[0]) $shades[$i]
+            if ($parts.Count -gt 1) { $mark += (Paint ' </>  ' '1;97') + (Paint (& $toPixels $parts[1]) $shades[$i]) }
+            Write-Host ("  " + $mark + "    " + (Paint (& $toPixels $word[$i]) '1;97'))
         }
         Write-Host ""
-        Write-Host ("  " + (Paint "E N G I N E E R I N G   L I B" "1;$Green") + "  " + (Paint $Label $Gray))
-        Write-Host ("  " + (Paint "Agents, skills & workflows pour Claude Code, quelle que soit la stack." $Gray))
-        Write-Host ("  " + (Paint "by" $Gray) + " " + (Paint "joeldogbo" "1;$Green"))
+        Write-Host ("  " + (Paint "E N G I N E E R I N G   L I B R A R Y" '1;38;5;39') + "  " + (Paint $Label $Gray))
+        Write-Host ("  " + (Paint "La biblioth${eg}que d'agents IA, de comp${e}tences et de workflows" '38;5;45'))
+        Write-Host ("  " + (Paint "pour le d${e}veloppement logiciel." '38;5;45'))
+        Write-Host ("  " + (Paint "Code $Dot Automatise $Dot Construis l'avenir $([char]0x2014) by" $Gray) + " " + (Paint "joeldogbo" '1;38;5;39'))
         Write-Host ""
     }
 
@@ -296,24 +325,125 @@ $__claudeLibInstall = @{ Failed = $false }
         return $choice
     }
 
+    # --- Mise a jour : empreintes, manifeste et journal des ecritures (defait en cas d'echec) ---
+    $Sha = [Security.Cryptography.SHA256]::Create()
+    function Get-Sha([string]$Path) {
+        $stream = [IO.File]::OpenRead($Path)
+        try { return ([BitConverter]::ToString($Sha.ComputeHash($stream)) -replace '-', '').ToLowerInvariant() } finally { $stream.Dispose() }
+    }
+
+    # Empreinte de chaque chemin (relatif a $Dir) present dans $Dir.
+    function Get-Hashes([string]$Dir, $Paths) {
+        $hashes = @{}
+        foreach ($rel in $Paths) {
+            $file = Join-Path $Dir $rel
+            if (-not $hashes.ContainsKey($rel) -and (Test-Path -LiteralPath $file -PathType Leaf)) { $hashes[$rel] = Get-Sha $file }
+        }
+        return $hashes
+    }
+
+    # Vrai si la version $A est strictement anterieure a $B (formes vX.Y.Z ; sinon : faux).
+    function Test-OlderVersion([string]$A, [string]$B) {
+        $x = $A.TrimStart('v'); $y = $B.TrimStart('v')
+        if ($x -notmatch '^\d+\.\d+\.\d+$' -or $y -notmatch '^\d+\.\d+\.\d+$') { return $false }
+        return ([version]$x) -lt ([version]$y)
+    }
+
+    function Add-Journal([string]$Action, [string]$Rel) { [void]$Txn.Journal.Add(@($Action, $Rel)) }
+
+    # Copie le fichier dans la sauvegarde avant qu'il soit remplace ou supprime.
+    function Backup-File([string]$Rel) {
+        $dst = Join-Path $Txn.BackupDir $Rel
+        New-Item -ItemType Directory -Path (Split-Path $dst) -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $ClaudeDir $Rel) $dst -Force
+        Add-Journal 'saved' $Rel
+    }
+
+    function Remove-EmptyDirs {
+        foreach ($item in @('agents') + $copyItems) {
+            $dir = Join-Path $ClaudeDir $item
+            if (-not (Test-Path $dir)) { continue }
+            Get-ChildItem $dir -Recurse -Directory -Force | Sort-Object { $_.FullName.Length } -Descending |
+                Where-Object { -not (Get-ChildItem $_.FullName -Force) } | Remove-Item -Force
+        }
+    }
+
+    # Defait les ecritures du journal dans l'ordre inverse : fichiers crees retires, fichiers
+    # remplaces ou supprimes recopies depuis la sauvegarde. Au mieux : une erreur n'arrete pas la suite.
+    function Undo-Writes {
+        for ($i = $Txn.Journal.Count - 1; $i -ge 0; $i--) {
+            $act, $rel = $Txn.Journal[$i]
+            $file = Join-Path $ClaudeDir $rel
+            try {
+                if ($act -eq 'created') { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
+                else {
+                    New-Item -ItemType Directory -Path (Split-Path $file) -Force | Out-Null
+                    Copy-Item -LiteralPath (Join-Path $Txn.BackupDir $rel) $file -Force
+                }
+            } catch {}
+        }
+        Remove-Item $updatesDir -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path $oldUpdates) { try { Move-Item $oldUpdates $updatesDir } catch {} }
+        try { Remove-EmptyDirs } catch {}
+    }
+
     $prevEncoding = [Console]::OutputEncoding
     try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    # Chemin absolu : les appels .NET ([IO.File]) ne suivent pas le dossier courant de PowerShell.
+    $TargetDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TargetDir)
+    $ClaudeDir = Join-Path $TargetDir '.claude'
+    $manifestPath = Join-Path $ClaudeDir '.claude-lib.manifest'
+    $lockDir = Join-Path $ClaudeDir '.claude-lib.lock'
+    $stageDir = Join-Path $ClaudeDir '.claude-lib-staging'
+    $updatesDir = Join-Path $ClaudeDir 'updates'
+    $oldUpdates = Join-Path $ClaudeDir '.claude-lib-old-updates'
+    $copyItems = @("skills", "standards", "templates", "workflows", "hooks")
+    # Etat de l'ecriture, pour defaire ce qui a ete fait si l'installation echoue ou est interrompue.
+    $Txn = @{ Applying = $false; Locked = $false; CreatedDir = $false; Done = $false; BackupDir = ''; Journal = New-Object System.Collections.ArrayList }
 
     try {
+        # --- Verifications avant tout telechargement ---
+        if ((Test-Path -LiteralPath $TargetDir) -and -not (Test-Path -LiteralPath $TargetDir -PathType Container)) {
+            throw "$TargetDir existe mais n'est pas un dossier."
+        }
+
+        # --- Installation existante : manifeste (version, groupes, empreintes) ou, avant lui, fichiers presents ---
+        $existing = $false; $legacy = $false
+        $old = @{ version = ''; groups = ''; agents = ''; excluded = '' }
+        $manifestHashes = @{}
+        if (Test-Path $manifestPath) {
+            $existing = $true
+            foreach ($line in [IO.File]::ReadAllLines($manifestPath, $Utf8)) {
+                $line = $line.TrimEnd("`r")
+                if ($line -match '^@(\w+)\s*(.*)$') { $old[$Matches[1]] = $Matches[2].Trim() }
+                elseif ($line -notmatch '^#' -and $line -match '^(\S+)\s+(.+)$') { $manifestHashes[$Matches[2]] = $Matches[1] }
+            }
+        } elseif (@('hooks/regulator.sh', 'hooks/regulator.ps1', 'skills/workflow/SKILL.md' | Where-Object { Test-Path (Join-Path $ClaudeDir $_) }).Count) {
+            $existing = $true; $legacy = $true
+        }
+        if ($Update -and -not $existing) {
+            throw "Aucune installation de la biblioth${eg}que dans $TargetDir : relance sans -Update pour l'installer."
+        }
+
         if ($Source) {
             if (-not ((Test-Path (Join-Path $Source 'CLAUDE.md')) -and (Test-Path (Join-Path $Source 'agents')))) {
                 throw "$Source n'est pas une copie de la biblioth${eg}que."
             }
             Show-Banner "copie locale"
             $srcDir = Get-Item (Resolve-Path $Source).Path
+            $newVersion = 'local'
         } else {
             if (-not (Get-Command tar -ErrorAction SilentlyContinue)) {
                 throw "La commande tar est introuvable. Sous Windows, elle est fournie a partir de Windows 10 version 1803."
             }
             if (-not $Version) { $Version = Resolve-LatestVersion }
+            $newVersion = if ($Version) { $Version } else { 'main' }
+            if ($existing -and -not $Force -and (Test-OlderVersion $newVersion $old.version)) {
+                throw "La version install${e}e ($($old.version)) est plus r${e}cente que $newVersion : relance avec -Force pour revenir en arri${eg}re."
+            }
 
             if ($Version -eq 'main') {
                 Show-Banner "main"
@@ -331,14 +461,23 @@ $__claudeLibInstall = @{ Failed = $false }
 
             New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
             $archivePath = Join-Path $tmpDir "lib.tar.gz"
-            Invoke-Download $archiveUrl $archivePath
+            try { Invoke-Download $archiveUrl $archivePath } catch {
+                throw "T${e}l${e}chargement impossible : $archiveUrl (version inexistante, connexion ou proxy ?)"
+            }
             tar -xzf $archivePath -C $tmpDir
-            if ($LASTEXITCODE -ne 0) { throw "Extraction de l'archive impossible (tar a ${e}chou${e})." }
+            if ($LASTEXITCODE -ne 0) { throw "Extraction de l'archive impossible (archive corrompue ou disque plein ?)." }
+            $srcDir = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
+            if (-not $srcDir -or -not (Test-Path (Join-Path $srcDir.FullName 'CLAUDE.md')) -or -not (Test-Path (Join-Path $srcDir.FullName 'agents'))) {
+                throw "Archive incompl${eg}te : CLAUDE.md ou agents/ manquant."
+            }
             Write-TaskEnd 'DONE'
             Write-Host ""
-
-            $srcDir = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
         }
+        if ($existing) {
+            $from = if ($legacy) { "Installation existante sans manifeste (version ant${e}rieure)" } else { "Installation existante : $(if ($old.version) { $old.version } else { '?' })" }
+            Write-Host ("  " + (Paint " UPDATE " $BadgeWarn) + " $from $Arrow $newVersion")
+        }
+
         # --- Choix des agents, avant toute ecriture : une erreur ne laisse rien derriere elle ---
         $agentTable = @(Get-AgentTable (Join-Path $srcDir.FullName 'agents'))
         $allAgents = @($agentTable | ForEach-Object { $_.Name })
@@ -346,13 +485,18 @@ $__claudeLibInstall = @{ Failed = $false }
         $splitList = { param([string]$Text) @($Text -split '[,\s]+' | Where-Object { $_ }) }
         $wantedGroups = @(& $splitList $Groups)
         $wantedAgents = @(& $splitList $Agents)
+        $explicit = $All -or $Type -or $wantedGroups.Count -or $wantedAgents.Count
+        $selected = @(); $label = ''
+        $recordGroups = @(); $recordExtra = @(); $recordExcluded = @()
+        $conf = $null
         if (-not (Test-Path $profilesFile)) {
             # Version de la bibliotheque sans profiles.conf : tous les agents, comme avant.
-            $selected = $allAgents; $label = 'tous'
+            $selected = $allAgents; $label = 'tous'; $recordGroups = @('all')
         } else {
             $conf = Read-Profiles $profilesFile
             $detected = Get-ProjectType $TargetDir
-            if (-not $All -and -not $Type -and -not $wantedGroups.Count -and -not $wantedAgents.Count) {
+            # Mise a jour sans option : pas de menu, la selection vient de l'installation existante.
+            if (-not $explicit -and -not $existing) {
                 # Entree ou sortie redirigee (CI, journal, tests) : pas de menu.
                 $nonInteractive = [Console]::IsInputRedirected -or [Console]::IsOutputRedirected
                 if ($env:CLAUDE_LIB_TTY) { $State.Answers = @([IO.File]::ReadAllLines($env:CLAUDE_LIB_TTY, $Utf8)) }
@@ -366,11 +510,10 @@ $__claudeLibInstall = @{ Failed = $false }
                 }
             }
             if ($All -or $Type -eq 'all' -or $Type -eq 'tout') {
-                $selected = $allAgents; $label = 'tous'
-            } else {
+                $selected = $allAgents; $label = 'tous'; $recordGroups = @('all')
+            } elseif ($explicit -or -not $existing) {
                 $groupNames = @($conf.Groups | ForEach-Object { $_.Name })
                 $groupsToInstall = @('core')
-                $label = ''
                 if ($Type) {
                     $profileEntry = $conf.Profiles | Where-Object { $_.Name -eq $Type } | Select-Object -First 1
                     if (-not $profileEntry) { throw "Type de projet inconnu : $Type (types : $((@($conf.Profiles | ForEach-Object { $_.Name }) + 'all') -join ' '))." }
@@ -388,67 +531,190 @@ $__claudeLibInstall = @{ Failed = $false }
                 }
                 if ($wantedAgents.Count) { $label = $(if ($label) { $label } else { 'core' }) + ' + ' + ($wantedAgents -join ', ') }
                 if (-not $label) { $label = 'core' }
+                $recordGroups = @($groupsToInstall | Select-Object -Unique); $recordExtra = @($wantedAgents)
             }
         }
 
-        $copyItems = @("skills", "standards", "templates", "workflows", "hooks")
-        $skipped = @()
-        $ClaudeDir = Join-Path $TargetDir ".claude"
-        New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
-
-        # Agents choisis, un par un : ceux deja installes sont gardes (remplaces avec -Force), et
-        # un agent installe auparavant n'est jamais supprime : on peut donc en ajouter plus tard.
-        $agentsDir = Join-Path $ClaudeDir 'agents'
-        New-Item -ItemType Directory -Path $agentsDir -Force | Out-Null
-        $added = 0
-        foreach ($a in $selected) {
-            $dst = Join-Path $agentsDir "$a.md"
-            if ((Test-Path $dst) -and (-not $Force)) { continue }
-            Copy-Item (Join-Path $srcDir.FullName "agents/$a.md") "$dst.new" -Force
-            Move-Item "$dst.new" $dst -Force
-            $added++
+        # Mise a jour : agents deja installes, plus les nouveaux agents des groupes installes,
+        # sauf ceux que l'utilisateur a supprimes (sauf s'il les redemande avec -Agents ou -Groups).
+        if ($existing) {
+            $installed = @($allAgents | Where-Object { Test-Path (Join-Path $ClaudeDir "agents/$_.md") })
+            if (-not $legacy) {
+                $excluded = @(& $splitList $old.excluded)
+                foreach ($rel in @($manifestHashes.Keys)) {
+                    if ($rel -match '^agents/(.+)\.md$' -and -not (Test-Path (Join-Path $ClaudeDir $rel))) { $excluded += $Matches[1] }
+                }
+                $recordExcluded = @($excluded | Select-Object -Unique | Where-Object { $selected -notcontains $_ })
+                $oldGroups = @(& $splitList $old.groups); $oldExtra = @(& $splitList $old.agents)
+                $fromGroups = if ($oldGroups -contains 'all') { $allAgents } else { @(Get-AgentsOfGroups $agentTable $oldGroups) + $oldExtra }
+                foreach ($a in $fromGroups) {
+                    if ($allAgents -contains $a -and $recordExcluded -notcontains $a -and $installed -notcontains $a) { $installed += $a }
+                }
+                if ($oldGroups -contains 'all' -or $recordGroups -contains 'all') { $recordGroups = @('all') }
+                else { $recordGroups = @(@($oldGroups) + @($recordGroups) | Select-Object -Unique) }
+                $recordExtra = @(@($oldExtra) + @($recordExtra) | Select-Object -Unique)
+            } elseif ($conf -and $recordGroups -notcontains 'all') {
+                # Sans manifeste, les groupes installes sont ceux dont tous les agents sont presents.
+                foreach ($g in $conf.Groups) {
+                    $members = @(Get-AgentsOfGroups $agentTable @($g.Name))
+                    if ($members.Count -and -not @($members | Where-Object { $installed -notcontains $_ }).Count -and $recordGroups -notcontains $g.Name) { $recordGroups += $g.Name }
+                }
+            }
+            foreach ($a in $installed) { if ($selected -notcontains $a) { $selected += $a } }
+            $label = if ($explicit) { "mise ${ag} jour + " + ($label -replace '^core \+ ', '') } else { "mise ${ag} jour" }
         }
-        Write-TaskStart ".claude/agents/" "($($selected.Count)/$($allAgents.Count) $Dot $label)"
-        if ($added -eq 0) { $skipped += ".claude/agents/"; Write-TaskEnd 'SKIP' } else { Write-TaskEnd 'DONE' }
-        if (Test-Path $profilesFile) { Copy-Item $profilesFile (Join-Path $ClaudeDir 'profiles.conf') -Force }
 
+        # --- Plan : chaque fichier de la bibliotheque compare a la copie installee et au manifeste ---
+        $srcRoot = $srcDir.FullName
+        $files = New-Object System.Collections.Generic.List[string]
+        foreach ($a in $selected) { $files.Add("agents/$a.md") }
+        if (Test-Path $profilesFile) { $files.Add('profiles.conf') }
         foreach ($item in $copyItems) {
-            $srcItem = Join-Path $srcDir.FullName $item
-            $dstItem = Join-Path $ClaudeDir $item
-            if (-not (Test-Path $srcItem)) { continue }
+            $dir = Join-Path $srcRoot $item
+            if (-not (Test-Path $dir)) { continue }
+            $rels = [string[]]@(Get-ChildItem -LiteralPath $dir -Recurse -File -Force | ForEach-Object { $_.FullName.Substring($srcRoot.Length).TrimStart('\', '/').Replace('\', '/') })
+            [Array]::Sort($rels, [StringComparer]::Ordinal)
+            foreach ($rel in $rels) { $files.Add($rel) }
+        }
+        $files.Add('CLAUDE.md')
+        $srcHash = Get-Hashes $srcRoot $files
+        if ($srcHash.Count -ne $files.Count) { throw "Fichiers de la biblioth${eg}que illisibles dans la source (archive incompl${eg}te ?)." }
+        $dstHash = Get-Hashes $ClaudeDir (@($files) + @($manifestHashes.Keys))
 
-            Write-TaskStart ".claude/$item/" ("(" + @(Get-ChildItem $srcItem).Count + ")")
-            if ((Test-Path $dstItem) -and (-not $Force)) {
-                $skipped += ".claude/$item/"
-                Write-TaskEnd 'SKIP'
-            } else {
-                # Copie complete a cote avant de remplacer : un echec en cours de copie
-                # laisse l'ancienne version intacte.
-                $staging = "$dstItem.new"
-                if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
-                Copy-Item $srcItem $staging -Recurse
-                if (Test-Path $dstItem) { Remove-Item $dstItem -Recurse -Force }
-                Move-Item $staging $dstItem
-                Write-TaskEnd 'DONE'
+        #   add      absent chez toi                       -> copie
+        #   same     identique a la bibliotheque           -> rien
+        #   update   non modifie depuis l'installation     -> remplace (ancien sauvegarde)
+        #   force    modifie chez toi, -Force              -> remplace (ancien sauvegarde)
+        #   kept     modifie chez toi, inchange dans la bibliotheque -> conserve
+        #   conflict modifie chez toi et dans la bibliotheque -> conserve, nouvelle version dans updates/
+        #   remove   retire de la bibliotheque, non modifie -> supprime (sauvegarde)
+        #   orphan   retire de la bibliotheque, modifie     -> conserve
+        # Sans manifeste (installation anterieure), un fichier different est une ancienne version :
+        # remplace apres sauvegarde, sauf CLAUDE.md, souvent personnalise.
+        $plan = New-Object System.Collections.ArrayList
+        foreach ($rel in $files) {
+            $s = $srcHash[$rel]; $m = $manifestHashes[$rel]; $inManifest = $manifestHashes.ContainsKey($rel)
+            $act = if (-not $dstHash.ContainsKey($rel)) { 'add' }
+                elseif ($dstHash[$rel] -eq $s) { 'same' }
+                elseif ($inManifest -and $dstHash[$rel] -eq $m) { 'update' }
+                elseif ($Force) { 'force' }
+                elseif ($inManifest -and $s -eq $m) { 'kept' }
+                elseif ($legacy -and $rel -ne 'CLAUDE.md') { 'update' }
+                else { 'conflict' }
+            [void]$plan.Add([pscustomobject]@{ Act = $act; Path = $rel; Src = $s; Old = $m })
+        }
+        foreach ($rel in @($manifestHashes.Keys)) {
+            if (-not $srcHash.ContainsKey($rel) -and $dstHash.ContainsKey($rel)) {
+                $act = if ($dstHash[$rel] -eq $manifestHashes[$rel]) { 'remove' } else { 'orphan' }
+                [void]$plan.Add([pscustomobject]@{ Act = $act; Path = $rel; Src = ''; Old = $manifestHashes[$rel] })
+            }
+        }
+        $countOf = { param([string[]]$Acts) @($plan | Where-Object { $Acts -contains $_.Act }).Count }
+        $pathsOf = { param([string]$Act) (@($plan | Where-Object { $_.Act -eq $Act } | ForEach-Object { $_.Path }) -join ', ') }
+
+        if ($DryRun) {
+            Write-Host ""
+            Write-Host ("  " + (Paint " DRY-RUN " $BadgeWarn) + " Simulation : rien n'est ${e}crit. Agents : $label.")
+            Write-Host ""
+            $marks = @{
+                add      = @('+', "ajout${e}")
+                update   = @('~', "mis ${ag} jour, ancien sauvegard${e}")
+                force    = @('~', "modifi${e} chez toi, remplac${e} : -Force")
+                kept     = @('=', "modifi${e} chez toi, inchang${e} dans la biblioth${eg}que : conserv${e}")
+                conflict = @('!', "modifi${e} chez toi : conserv${e}, nouvelle version dans .claude/updates/")
+                remove   = @('-', "retir${e} de la biblioth${eg}que")
+                orphan   = @('?', "retir${e} de la biblioth${eg}que, modifi${e} chez toi : conserv${e}")
+            }
+            foreach ($x in $plan) {
+                if ($marks.ContainsKey($x.Act)) { Write-Host ("    " + $marks[$x.Act][0] + " " + $x.Path + "   (" + $marks[$x.Act][1] + ")") }
+            }
+            Write-Host ""
+            Write-Host ("  Ajout${e}s $(& $countOf 'add') $Dot mis ${ag} jour $(& $countOf 'update','force') $Dot conflits $(& $countOf 'conflict') $Dot supprim${e}s $(& $countOf 'remove') $Dot inchang${e}s $(& $countOf 'same')")
+            Write-Host ""
+            $Txn.Done = $true
+            return
+        }
+
+        # --- Preparation de l'ecriture : dossier accessible, une seule installation a la fois ---
+        if (-not (Test-Path $ClaudeDir)) {
+            try { New-Item -ItemType Directory -Path $ClaudeDir | Out-Null } catch { throw "Impossible de cr${e}er $ClaudeDir (droits d'${e}criture sur le dossier ?)." }
+            $Txn.CreatedDir = $true
+        }
+        $probe = Join-Path $ClaudeDir ".claude-lib-write-test.$PID"
+        try { [IO.File]::WriteAllText($probe, ''); Remove-Item -LiteralPath $probe -Force } catch { throw "Pas de droit d'${e}criture dans $ClaudeDir." }
+        try { New-Item -ItemType Directory -Path $lockDir | Out-Null } catch {
+            throw "Une autre installation est en cours dans ce projet. Si ce n'est pas le cas, supprime $lockDir et relance."
+        }
+        $Txn.Locked = $true
+
+        # --- Ecriture en trois temps : copie a cote, sauvegarde, remplacement -- defaite si une etape echoue ---
+        if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
+        foreach ($x in $plan) {
+            if (@('add', 'update', 'force', 'conflict') -notcontains $x.Act) { continue }
+            $staged = Join-Path $stageDir $x.Path
+            try {
+                New-Item -ItemType Directory -Path (Split-Path $staged) -Force | Out-Null
+                Copy-Item -LiteralPath (Join-Path $srcRoot $x.Path) $staged -Force
+            } catch { throw "Copie impossible de $($x.Path) dans $ClaudeDir (disque plein ou droits ?)." }
+        }
+
+        $Txn.BackupDir = Join-Path $ClaudeDir ('backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+        $Txn.Applying = $true
+        # Copies de conflits d'une installation precedente : mises de cote (regenerees si besoin, remises en cas d'echec).
+        if (Test-Path $oldUpdates) { Remove-Item $oldUpdates -Recurse -Force }
+        if (Test-Path $updatesDir) { Move-Item $updatesDir $oldUpdates }
+        $applied = 0
+        foreach ($x in $plan) {
+            $file = Join-Path $ClaudeDir $x.Path
+            $staged = Join-Path $stageDir $x.Path
+            if ($x.Act -eq 'add') {
+                New-Item -ItemType Directory -Path (Split-Path $file) -Force | Out-Null
+                Add-Journal 'created' $x.Path
+                Move-Item -LiteralPath $staged $file -Force
+            } elseif ($x.Act -eq 'update' -or $x.Act -eq 'force') {
+                Backup-File $x.Path
+                Move-Item -LiteralPath $staged $file -Force
+            } elseif ($x.Act -eq 'remove') {
+                Backup-File $x.Path
+                Remove-Item -LiteralPath $file -Force
+            } elseif ($x.Act -eq 'conflict') {
+                $newCopy = Join-Path $updatesDir "$($x.Path).new"
+                New-Item -ItemType Directory -Path (Split-Path $newCopy) -Force | Out-Null
+                Add-Journal 'created' "updates/$($x.Path).new"
+                Move-Item -LiteralPath $staged $newCopy -Force
+            } else { continue }
+            $applied++
+            # Reserve aux tests : simule une panne apres N ecritures pour verifier la restauration.
+            if ($env:CLAUDE_LIB_TEST_FAIL_AT -and $applied -ge [int]$env:CLAUDE_LIB_TEST_FAIL_AT) { throw "Panne simul${e}e (CLAUDE_LIB_TEST_FAIL_AT)." }
+        }
+        Remove-EmptyDirs
+
+        # Verification : chaque fichier ecrit est identique a celui de la bibliotheque.
+        foreach ($x in $plan) {
+            if (@('add', 'update', 'force') -contains $x.Act -and (Get-Sha (Join-Path $ClaudeDir $x.Path)) -ne $x.Src) {
+                throw "V${e}rification apr${eg}s copie ${e}chou${e}e : $($x.Path) diff${eg}re de la biblioth${eg}que."
             }
         }
 
-        $dstClaudeMd = Join-Path $ClaudeDir "CLAUDE.md"
-        $srcClaudeMd = Join-Path $srcDir.FullName "CLAUDE.md"
-        $claudeMdKept = (Test-Path $dstClaudeMd) -and (-not $Force)
-        Write-TaskStart ".claude/CLAUDE.md"
-        if ($claudeMdKept) {
-            Copy-Item $srcClaudeMd (Join-Path $ClaudeDir "CLAUDE.md.claude-engineering-lib") -Force
-            Write-TaskEnd 'MERGE'
-        } else {
-            Copy-Item $srcClaudeMd $dstClaudeMd -Force
-            Write-TaskEnd 'DONE'
+        # DONE si quelque chose a change, MERGE si conflit, SKIP sinon.
+        function Write-Report([string]$Label, [string]$Detail, [string]$Prefix) {
+            $mine = @($plan | Where-Object { $_.Path.StartsWith($Prefix) })
+            Write-TaskStart $Label $Detail
+            if (@($mine | Where-Object { $_.Act -eq 'conflict' }).Count) { Write-TaskEnd 'MERGE' }
+            elseif (@($mine | Where-Object { @('add', 'update', 'force', 'remove') -contains $_.Act }).Count) { Write-TaskEnd 'DONE' }
+            else { Write-TaskEnd 'SKIP' }
         }
+        Write-Report ".claude/agents/" "($($selected.Count)/$($allAgents.Count) $Dot $label)" 'agents/'
+        foreach ($item in $copyItems) {
+            $srcItem = Join-Path $srcRoot $item
+            if (Test-Path $srcItem) { Write-Report ".claude/$item/" ("(" + @(Get-ChildItem $srcItem).Count + ")") "$item/" }
+        }
+        Write-Report ".claude/CLAUDE.md" "" 'CLAUDE.md'
 
         # Hook du regulateur dans .claude/settings.json : ajoute a l'existant, sans rien ecraser.
         # Un fichier illisible n'est jamais reecrit : la configuration a ajouter est mise a cote.
         $hookMerge = $null
-        if (Test-Path (Join-Path $srcDir.FullName 'hooks/regulator.ps1')) {
+        if (Test-Path (Join-Path $srcRoot 'hooks/regulator.ps1')) {
             $settingsPath = Join-Path $ClaudeDir 'settings.json'
             $shellExe = if ($PSVersionTable.PSEdition -eq 'Core' -and -not $IsWindows) { 'pwsh' } else { 'powershell' }
             $hook = [pscustomobject]@{
@@ -461,7 +727,8 @@ $__claudeLibInstall = @{ Failed = $false }
             Write-TaskStart ".claude/settings.json" "(r${e}gulateur)"
             if (-not (Test-Path $settingsPath)) {
                 $settings = [pscustomobject]@{ hooks = [pscustomobject]@{ UserPromptSubmit = @($entry) } }
-                [IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject $settings -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                Add-Journal 'created' 'settings.json'
+                [IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject $settings -Depth 20), $Utf8)
                 Write-TaskEnd 'DONE'
             } elseif ([IO.File]::ReadAllText($settingsPath) -match 'regulator\.(ps1|sh)') {
                 Write-TaskEnd 'SKIP'
@@ -469,35 +736,90 @@ $__claudeLibInstall = @{ Failed = $false }
                 try {
                     $settings = [IO.File]::ReadAllText($settingsPath) | ConvertFrom-Json
                     if (-not $settings.hooks) { $settings | Add-Member -NotePropertyName hooks -NotePropertyValue ([pscustomobject]@{}) }
-                    $existing = @($settings.hooks.UserPromptSubmit | Where-Object { $_ })
-                    $settings.hooks | Add-Member -NotePropertyName UserPromptSubmit -NotePropertyValue (@($existing) + $entry) -Force
-                    [IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject $settings -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                    $existingHooks = @($settings.hooks.UserPromptSubmit | Where-Object { $_ })
+                    $settings.hooks | Add-Member -NotePropertyName UserPromptSubmit -NotePropertyValue (@($existingHooks) + $entry) -Force
+                    $json = ConvertTo-Json -InputObject $settings -Depth 20
+                } catch { $json = $null }
+                if ($json) {
+                    # Ecrit a cote puis remplace : un arret en cours d'ecriture ne laisse pas un fichier tronque.
+                    Backup-File 'settings.json'
+                    [IO.File]::WriteAllText("$settingsPath.new", $json, $Utf8)
+                    Move-Item -LiteralPath "$settingsPath.new" $settingsPath -Force
                     Write-TaskEnd 'DONE'
-                } catch {
+                } else {
                     $hookMerge = Join-Path $ClaudeDir 'settings.regulator.json'
                     $snippet = [pscustomobject]@{ hooks = [pscustomobject]@{ UserPromptSubmit = @($entry) } }
-                    [IO.File]::WriteAllText($hookMerge, (ConvertTo-Json -InputObject $snippet -Depth 20), (New-Object System.Text.UTF8Encoding $false))
+                    Add-Journal 'created' 'settings.regulator.json'
+                    [IO.File]::WriteAllText($hookMerge, (ConvertTo-Json -InputObject $snippet -Depth 20), $Utf8)
                     Write-TaskEnd 'MERGE'
                 }
             }
         }
 
+        # --- Manifeste, ecrit en dernier : il ne decrit que ce qui est reellement installe ---
+        $lines = New-Object System.Collections.Generic.List[string]
+        $lines.Add("# claude-engineering-lib : version install${e}e et empreinte de chaque fichier de la biblioth${eg}que.")
+        $lines.Add("# Sert aux mises ${ag} jour (fichiers modifi${e}s chez toi d${e}tect${e}s et conserv${e}s). Ne pas modifier ${ag} la main.")
+        $lines.Add("@version $newVersion")
+        $lines.Add("@date " + (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        $lines.Add("@groups " + ($recordGroups -join ' '))
+        $lines.Add("@agents " + ($recordExtra -join ' '))
+        $lines.Add("@excluded " + ($recordExcluded -join ' '))
+        foreach ($x in $plan) {
+            if (@('add', 'same', 'update', 'force') -contains $x.Act) { $lines.Add("$($x.Src)  $($x.Path)") }
+            elseif (@('kept', 'conflict', 'orphan') -contains $x.Act -and $x.Old) { $lines.Add("$($x.Old)  $($x.Path)") }
+        }
+        # Fins de ligne LF : le manifeste est aussi lu par install.sh.
+        [IO.File]::WriteAllText("$manifestPath.new", (($lines -join "`n") + "`n"), $Utf8)
+        if (Test-Path $manifestPath) { Backup-File '.claude-lib.manifest' } else { Add-Journal 'created' '.claude-lib.manifest' }
+        Move-Item -LiteralPath "$manifestPath.new" $manifestPath -Force
+        $Txn.Applying = $false
+        $Txn.Done = $true
+        Remove-Item $oldUpdates -Recurse -Force -ErrorAction SilentlyContinue
+
+        # Sauvegarde qui ne contient que l'ancien manifeste (gardee pour la restauration) : inutile une fois fini.
+        if (-not @($Txn.Journal | Where-Object { $_[0] -eq 'saved' -and $_[1] -ne '.claude-lib.manifest' }).Count) {
+            Remove-Item $Txn.BackupDir -Recurse -Force -ErrorAction SilentlyContinue
+            $backupsRoot = Join-Path $ClaudeDir 'backups'
+            if ((Test-Path $backupsRoot) -and -not (Get-ChildItem $backupsRoot -Force)) { Remove-Item $backupsRoot -Force }
+        }
+        # Sauvegardes et copies de conflits hors de git ; seules les 5 dernieres sauvegardes sont gardees.
+        foreach ($d in @('backups', 'updates')) {
+            $dir = Join-Path $ClaudeDir $d
+            if (Test-Path $dir) { [IO.File]::WriteAllText((Join-Path $dir '.gitignore'), "*`n", $Utf8) }
+        }
+        $backupsRoot = Join-Path $ClaudeDir 'backups'
+        if (Test-Path $backupsRoot) {
+            $dirs = @(Get-ChildItem $backupsRoot -Directory | Sort-Object Name)
+            if ($dirs.Count -gt 5) { $dirs[0..($dirs.Count - 6)] | Remove-Item -Recurse -Force }
+        }
+
+        $nConflict = & $countOf 'conflict'; $nOrphan = & $countOf 'orphan'
         Write-Host ""
-        Write-Host ("  " + (Paint " SUCCESS " $BadgeOk) + " Biblioth${eg}que install${e}e dans " + (Paint $TargetDir '1'))
-        if ($label -ne 'tous') {
+        if ($existing) {
+            Write-Host ("  " + (Paint " SUCCESS " $BadgeOk) + " Biblioth${eg}que mise ${ag} jour dans " + (Paint $TargetDir '1') + " ($(if ($old.version) { $old.version } else { 'sans manifeste' }) $Arrow $newVersion)")
+        } else {
+            Write-Host ("  " + (Paint " SUCCESS " $BadgeOk) + " Biblioth${eg}que install${e}e dans " + (Paint $TargetDir '1'))
+        }
+        Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Ajout${e}s $(& $countOf 'add') $Dot mis ${ag} jour $(& $countOf 'update','force') $Dot supprim${e}s $(& $countOf 'remove') $Dot inchang${e}s $(& $countOf 'same') $Dot tes modifications conserv${e}es $(& $countOf 'kept','conflict','orphan')")
+        if ($label -ne 'tous' -and -not $existing) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Agents : $label. Pour en ajouter plus tard : " + (Paint '-Agents <nom>' '1') + " ou " + (Paint '-Groups <groupe>' '1') + ".")
         }
-        if ($skipped) {
-            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " D${e}j${ag} pr${e}sents, conserv${e}s : " + ($skipped -join ', ') + ". Relance avec " + (Paint '-Force' '1') + " pour les ${e}craser.")
+        if ($nConflict) {
+            Write-Host ("  " + (Paint " MERGE " $BadgeWarn) + " $nConflict fichier(s) modifi${e}(s) chez toi, conserv${e}(s) : $(& $pathsOf 'conflict'). La nouvelle version est dans " + (Paint '.claude/updates/<fichier>.new' '1') + ", ${ag} fusionner ; " + (Paint '-Force' '1') + " les remplace (apr${eg}s sauvegarde).")
         }
-        if ($claudeMdKept) {
-            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/CLAUDE.md existant conserv${e} : la version de la biblioth${eg}que est dans " + (Paint '.claude/CLAUDE.md.claude-engineering-lib' '1') + ", ${ag} fusionner.")
+        if ($nOrphan) {
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Retir${e}(s) de la biblioth${eg}que mais modifi${e}(s) chez toi, conserv${e}(s) : $(& $pathsOf 'orphan').")
+        }
+        if (Test-Path $Txn.BackupDir) {
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Anciennes versions sauvegard${e}es dans " + (Paint ".claude/backups/$(Split-Path $Txn.BackupDir -Leaf)" '1') + ".")
         }
         if ($hookMerge) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/settings.json illisible, laiss${e} intact : le hook du r${e}gulateur est dans " + (Paint '.claude/settings.regulator.json' '1') + ", ${ag} fusionner.")
         }
         Write-Host ""
         Write-Host ("  " + (Paint $Arrow $Green) + " Ouvre Claude Code ici et d${e}cris ta t${ac}che : " + (Paint "les agents se lancent tout seuls." "1;$Green"))
+        Write-Host ("  " + (Paint ([char]0x21BB) $Green) + " Mise ${ag} jour plus tard : relance la m${e}me commande (ou " + (Paint '-DryRun' '1') + " pour voir ce qui changerait).")
         Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Claude Code d${e}j${ag} ouvert dans ce dossier (terminal ou VS Code) : " + (Paint "red${e}marre la session" '1') + ", les agents ne sont charg${e}s qu'au d${e}marrage.")
         Write-Host ("  " + (Paint $Star $Green) + " " + (Paint "github.com/$Repo" $Gray))
         Write-Host ""
@@ -508,7 +830,17 @@ $__claudeLibInstall = @{ Failed = $false }
         Write-Host ("  " + (Paint " ERREUR " $BadgeErr) + " " + $_.Exception.Message)
         Write-Host ""
     } finally {
+        # Echec ou Ctrl+C en cours d'ecriture : retour a l'etat d'avant.
+        if ($Txn.Applying) {
+            Undo-Writes
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Rien n'a chang${e} : les fichiers d${e}j${ag} ${e}crits ont ${e}t${e} retir${e}s ou restaur${e}s.")
+            Write-Host ""
+        }
+        if ($Txn.CreatedDir -and -not $Txn.Done) { Remove-Item $ClaudeDir -Recurse -Force -ErrorAction SilentlyContinue }
+        Remove-Item $stageDir -Recurse -Force -ErrorAction SilentlyContinue
+        if ($Txn.Locked) { Remove-Item $lockDir -Recurse -Force -ErrorAction SilentlyContinue }
         Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
+        $Sha.Dispose()
         try { [Console]::OutputEncoding = $prevEncoding } catch {}
     }
 }
