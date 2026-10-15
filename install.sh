@@ -413,10 +413,22 @@ if [[ -f "$SRC_DIR/hooks/regulator.sh" ]]; then
   SETTINGS="$CLAUDE_DIR/settings.json"
   # shellcheck disable=SC2016  # ${CLAUDE_PROJECT_DIR} est développé par Claude Code, pas par ce script.
   HOOK='{"type": "command", "command": "bash", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.sh"], "timeout": 30}'
+  # Sous Windows (Git Bash, MSYS, Cygwin), Claude Code peut trouver le bash de WSL, qui ne lit pas
+  # les chemins « d:\... » : le hook passe par PowerShell, toujours présent, comme avec install.ps1.
+  case "$(uname -s)" in
+    MINGW* | MSYS* | CYGWIN*)
+      # shellcheck disable=SC2016
+      HOOK='{"type": "command", "command": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.ps1"], "timeout": 30}' ;;
+  esac
   task_start ".claude/settings.json" "(régulateur)"
   if [[ ! -f "$SETTINGS" ]]; then
     printf '{\n  "hooks": {\n    "UserPromptSubmit": [\n      { "hooks": [%s] }\n    ]\n  }\n}\n' "$HOOK" >"$SETTINGS"
     task_end DONE
+  elif [[ "$HOOK" == *regulator.ps1* ]] && grep -q 'regulator\.sh' "$SETTINGS"; then
+    # Installation Windows antérieure avec le hook bash : remplacé par le hook PowerShell.
+    # shellcheck disable=SC2016
+    sed -i.bak 's#"command": *"bash", *"args": *\["${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.sh"\]#"command": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/regulator.ps1"]#' "$SETTINGS" && rm -f "$SETTINGS.bak"
+    if grep -q 'regulator\.ps1' "$SETTINGS"; then task_end DONE; else task_end SKIP; fi
   elif grep -Eq 'regulator\.(sh|ps1)' "$SETTINGS"; then
     task_end SKIP
   elif [[ -n "$PY" ]] && "$PY" - "$SETTINGS" "$HOOK" <<'PY' 2>/dev/null

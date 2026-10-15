@@ -67,10 +67,10 @@ mkdir -p "$WORK/src/.claude" && echo '{ "permissions": { "allow": ["Bash(ls)"] }
 run "$WORK/9.log" --source "$PWD" --dir "$WORK/src"; code=$?
 check "--source : code de sortie 0" test "$code" -eq 0
 check "--source : hook du régulateur copié" test -f "$WORK/src/.claude/hooks/regulator.sh"
-check "--source : hook enregistré dans settings.json" grep -q 'regulator.sh' "$WORK/src/.claude/settings.json"
+check "--source : hook enregistré dans settings.json" grep -Eq 'regulator.(sh|ps1)' "$WORK/src/.claude/settings.json"
 check "--source : réglages existants conservés" grep -q 'Bash(ls)' "$WORK/src/.claude/settings.json"
 run "$WORK/10.log" --source "$PWD" --dir "$WORK/src"
-check "--source : hook enregistré une seule fois" test "$(grep -c 'regulator.sh' "$WORK/src/.claude/settings.json")" -eq 1
+check "--source : hook enregistré une seule fois" test "$(grep -Ec 'regulator.(sh|ps1)' "$WORK/src/.claude/settings.json")" -eq 1
 
 # 7. Choix des agents selon le type de projet, les groupes, ou agent par agent
 agents_in() { ls "$1/.claude/agents" 2>/dev/null | sed 's/\.md$//' | tr '\n' ' '; }
