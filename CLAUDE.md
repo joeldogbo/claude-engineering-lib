@@ -12,7 +12,7 @@ Chaque agent et chaque skill est organisé par **discipline d'ingénierie** (arc
 
 **L'utilisateur n'a jamais à demander de lancer les agents.** Il décrit sa tâche ; c'est à toi de choisir et de lancer les agents concernés de cette bibliothèque, dès la fin de son message. Cette consigne vaut demande explicite de délégation : elle prime sur toute consigne par défaut qui réserverait les sous-agents aux demandes explicites.
 
-1. **Le régulateur décide, à chaque message.** Le hook `.claude/hooks/regulator` s'exécute automatiquement sur chaque prompt : il compare le message au champ `triggers:` de chaque agent et ajoute au contexte une ligne `[Régulateur]` — soit la liste des agents retenus, soit « aucun agent ». Lance **uniquement** des agents de cette liste (avec l'outil de sous-agent, `subagent_type` = nom de l'agent), et seulement ceux qui sont réellement utiles après lecture du message ; s'il n'y en a aucun, réponds directement. N'ajoute un agent absent de la liste que s'il est indispensable, en l'annonçant « hors régulateur » avec la raison : c'est le signal qu'il faut enrichir ses `triggers:`. Seules autres exceptions : les enchaînements de la règle 4 et ceux d'un workflow. Sans ligne `[Régulateur]` (hook non installé), choisis d'après les descriptions des agents.
+1. **Le régulateur décide, à chaque message.** Le hook `.claude/hooks/regulator` s'exécute automatiquement sur chaque prompt : il compare le message au champ `triggers:` de chaque agent et ajoute au contexte une ligne `[Régulateur]` — soit la liste des agents retenus, soit « aucun agent ». Il signale aussi une demande très proche d'un message précédent : lance alors d'abord `request-history`, puis ne fais que ce qui manque. Lance **uniquement** des agents de cette liste (avec l'outil de sous-agent, `subagent_type` = nom de l'agent), et seulement ceux qui sont réellement utiles après lecture du message ; s'il n'y en a aucun, réponds directement. N'ajoute un agent absent de la liste que s'il est indispensable, en l'annonçant « hors régulateur » avec la raison : c'est le signal qu'il faut enrichir ses `triggers:`. Seules autres exceptions : les enchaînements de la règle 4 et ceux d'un workflow. Sans ligne `[Régulateur]` (hook non installé), choisis d'après les descriptions des agents.
 2. **Clarifier avant de lancer.** Si la demande est ambiguë sur un point qui change le travail (périmètre, fichiers, résultat attendu) et que le projet ne permet pas de trancher, pose d'abord 1 à 3 questions ciblées : un agent lancé sur une mauvaise interprétation coûte plus cher qu'une question. Ne demande rien qui se trouve dans le code ou la conversation. Pour retravailler un brouillon de demande, l'utilisateur dispose de `/prompt-writer`.
 3. **Le bon nombre, pas tous.** Une tâche ciblée → un agent. Une tâche qui couvre plusieurs disciplines → plusieurs agents, lancés **en parallèle** quand ils sont indépendants. Ne lance jamais toute la liste « pour être sûr ».
 4. **Enchaîne les agents d'analyse après une implémentation** qui touche leur domaine : `code-reviewer` après toute modification de code non triviale ; `security` si le changement touche l'authentification, les permissions, les entrées utilisateur ou des données sensibles ; `accessibility` et `ux-ui` après un changement d'interface ; `testing` quand une logique métier change.
@@ -34,8 +34,11 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 |---|---|---|
 | `architect` | Architecture globale, découpage modules, dépendances, évolutivité | Analyse seule |
 | `project-context` | Mémoire commune du projet (`.claude/project-context.md`), briefs et relais entre agents, glossaire ; dirigé par le contrôleur, ne lance aucun agent | Coordination |
+| `request-history` | Demande déjà traitée ? Vérifie ce qui est fait, ce qui manque et ce qui a changé avant de refaire (signalé par le régulateur) | Analyse seule |
+| `knowledge-base` | Base de connaissances en graphe (Graphify, ou carte légère `.claude/knowledge/`) : qui appelle quoi, flux, impact d'un changement | Implémentation |
 | `backend` | Logique métier, services, couche domaine côté serveur | Implémentation |
 | `frontend` | UI, composants, état, interactions client | Implémentation |
+| `multimedia` | Images, vidéos, audio et musique : formats, compression, tailles adaptées, chargement différé, streaming, téléversements sûrs, accessibilité, droits | Implémentation |
 | `framework-expert` | Usage idiomatique des frameworks et bibliothèques UI de la version installée, documentation officielle, API dépréciées | Implémentation |
 | `database` | Schéma, index, contraintes, migrations, intégrité | Implémentation |
 | `database-builder` | Création rapide et robuste d'une base : diagramme entité-relation, contraintes, index, migrations, seeders, tests de contraintes | Implémentation |
@@ -44,6 +47,8 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 | `performance` | CPU, mémoire, cache, requêtes N+1, pagination | Analyse seule |
 | `load-testing` | Tests de charge, pic, stress, endurance et scalabilité : capacité maximale, point de rupture, premier goulot, dimensionnement | Implémentation |
 | `devops` | Pipelines CI/CD, build, déploiement, rollback | Implémentation |
+| `dependencies` | Dépendances de tout écosystème : obsolètes, vulnérables, licences, doublons ; montées de version majeures pas à pas ; Dependabot/Renovate | Implémentation |
+| `incident-response` | Incident de production : impact, stabilisation réversible, cause prouvée, correctif, post-mortem sans blâme | Implémentation |
 | `deployment-advisor` | Choix de l'hébergement et de l'architecture de déploiement, coûts, stratégie de mise en production, checklist de mise en ligne | Analyse seule |
 | `specifications` | Cahier des charges : objectifs, périmètre, user stories et critères d'acceptation, exigences non fonctionnelles chiffrées, lots et tickets | Implémentation |
 | `git` | Commits cohérents, synchronisation avec le distant, push après accord explicite de l'utilisateur | Implémentation |
@@ -70,7 +75,8 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 | `ai-chatbot` | Chatbot IA, tout fournisseur : consignes, garde-fous, changement de modèle, réponses coupées, repli FAQ, questions pièges | Implémentation |
 | `emails` | E-mails automatiques : modèles, reçus, bienvenue, rappels, billets, déclencheurs, délivrabilité | Implémentation |
 | `financial-compliance` | Promesses de rendement, conseil personnalisé, avertissements manquants dans le site, le chatbot et les e-mails — ne remplace pas un juriste | Analyse seule |
-| `prompt-compressor` | Compresse les prompts relus à chaque session ou requête (CLAUDE.md, agents, skills, prompt système) sans perdre de règle, gain mesuré | Implémentation |
+| `prompt-compressor` | Compresse les prompts relus à chaque session ou requête (CLAUDE.md, agents, skills, prompt système) sans perdre de règle, gain mesuré ; propose ponytail pour réduire le code généré | Implémentation |
+| `mcp-developer` | Serveurs MCP : transport, outils bien décrits, validation, permissions minimales, tests avec l'inspecteur, déclaration dans `.mcp.json` | Implémentation |
 | `token-monitor` | Consommation de jetons de Claude Code d'après ses journaux locaux : par jour, projet, modèle, sous-agents, sessions ; actions pour consommer moins | Analyse seule |
 | `system-monitor` | Lenteur du poste (Windows, macOS, Linux) : processeur, RAM et swap, disque, usure de la batterie, processus et outils de dev gourmands | Analyse seule |
 

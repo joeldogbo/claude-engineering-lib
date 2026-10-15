@@ -35,11 +35,12 @@ LEVELS = {
 }
 
 
-def run(shell, prompt, progress=None):
+def run(shell, prompt, progress=None, history=None):
     payload = json.dumps({"prompt_text": prompt, "hook_event_name": "UserPromptSubmit",
                           "cwd": "/tmp/agent-ia-chatbot-paiement"},  # le cwd ne doit jamais compter
                          ensure_ascii=False)  # UTF-8 brut, comme Claude Code (Node)
-    env = dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS, REGULATOR_PROGRESS_DIR=progress or str(ROOT / "absent"))
+    env = dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS, REGULATOR_PROGRESS_DIR=progress or str(ROOT / "absent"),
+               REGULATOR_HISTORY_FILE=history or str(ROOT / "absent" / "prompts.log"))
     # Chemin complet via le PATH : sous Windows, un nom nu trouverait le bash de WSL (System32) avant Git Bash.
     if shell == "bash":
         cmd = [shutil.which("bash") or "bash", (ROOT / "hooks" / "regulator.sh").as_posix()]
@@ -93,6 +94,19 @@ for shell in shells:
         ok = run(shell, "/workflow release", progress) == ""
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] commande slash silencieuse malgré la reprise")
+
+    # Demande répétée : signalée au second envoi d'un message reformulé, jamais pour un message différent ou court.
+    with tempfile.TemporaryDirectory() as hooks:
+        history = str(pathlib.Path(hooks, "prompts.log"))
+        first = run(shell, "Configure SQLite pour Laravel et crée une route API de test pour vérifier le backend", history=history)
+        again = run(shell, "Configure SQLite pour Laravel puis crée une route API de test pour vérifier que le backend fonctionne", history=history)
+        other = run(shell, "Ajoute la pagination à la liste des employés avec un filtre par service", history=history)
+        short = run(shell, "Ajoute un bouton", history=history)
+        lines = pathlib.Path(history).read_text(encoding="utf-8").splitlines()
+        ok = ("Demande très proche" not in first and "Demande très proche" in again and "request-history" in again
+              and "Demande très proche" not in other and "Demande très proche" not in short and len(lines) == 3)
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] demande répétée" + ("" if ok else f" -> {again} | {lines}"))
 
 for prompt, by_shell in results.items():
     if len({v if isinstance(v, str) else frozenset(v) for v in by_shell.values()}) > 1:

@@ -14,6 +14,8 @@
 # affiche la chaîne N1 -> N2 pour que le contrôleur les enchaîne au lieu de les paralléliser.
 # Travail interrompu : les fichiers .claude/progress/*.md marqués `statut: en cours` sont
 # signalés à chaque message, pour reprendre là où le travail s'est arrêté.
+# Demande répétée : un message très proche d'un précédent est signalé, pour vérifier ce qui
+# existe déjà au lieu de tout refaire (journal local .claude/hooks/prompts.log).
 #
 # Usage : hook (JSON sur l'entrée standard) ; -Audit pour vérifier que chaque agent respecte
 # les règles communes (déclencheurs, groupe, protocole, N1 existant) — code 1 sinon.
@@ -30,6 +32,7 @@ $projectDir = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.
 $dir = if ($env:REGULATOR_AGENTS_DIR) { $env:REGULATOR_AGENTS_DIR } else { Join-Path $projectDir '.claude/agents' }
 $progressDir = if ($env:REGULATOR_PROGRESS_DIR) { $env:REGULATOR_PROGRESS_DIR } else { Join-Path $projectDir '.claude/progress' }
 $lastFile = if ($env:REGULATOR_LAST_FILE) { $env:REGULATOR_LAST_FILE } else { Join-Path $projectDir '.claude/hooks/regulator.last' }
+$historyFile = if ($env:REGULATOR_HISTORY_FILE) { $env:REGULATOR_HISTORY_FILE } else { Join-Path $projectDir '.claude/hooks/prompts.log' }
 $max = if ($env:REGULATOR_MAX) { [int]$env:REGULATOR_MAX } else { 4 }
 if (-not (Test-Path $dir)) { exit 0 }
 
@@ -112,6 +115,31 @@ if (Test-Path $progressDir) {
     if ($pending.Count) {
         "[Régulateur] Travail interrompu à reprendre : $($pending -join ', '). Lis ces fichiers et propose à l'utilisateur de reprendre à la première étape non cochée, sans refaire les étapes déjà faites."
     }
+}
+
+# Demande répétée : le message est comparé aux 200 précédents du projet, dans un journal local
+# ignoré par git qui ne garde que les mots normalisés (3 lettres et plus, sans doublon).
+# Proche = au moins 6 mots et 75 % de mots communs (indice de Jaccard).
+if (Test-Path (Split-Path $historyFile)) {
+    try {
+        $words = @((Normalize-Text $prompt) -split ' ' | Where-Object { $_.Length -ge 3 } | Sort-Object -Unique)
+        if ($words.Count -ge 6) {
+            $past = if (Test-Path $historyFile) { @([IO.File]::ReadAllLines($historyFile, $utf8)) } else { @() }
+            $same = $null
+            foreach ($line in @($past | Select-Object -Last 200)) {
+                $parts = $line.Split("`t", 2)
+                if ($parts.Count -lt 2) { continue }
+                $old = @($parts[1].Split(' ') | Where-Object { $_ })
+                $common = @($old | Where-Object { $words -contains $_ }).Count
+                if ($common / ($words.Count + $old.Count - $common) -ge 0.75) { $same = $parts[0] }
+            }
+            if ($same) {
+                "[Régulateur] Demande très proche d'un message du $same : avant de refaire le travail, lance d'abord l'agent request-history (autorisé pour ce message) pour vérifier ce qui existe déjà, puis ne fais que ce qui manque."
+            }
+            $keep = @($past | Select-Object -Last 199) + ((Get-Date -Format 'yyyy-MM-dd HH:mm') + "`t" + ($words -join ' '))
+            [IO.File]::WriteAllText($historyFile, (($keep -join "`n") + "`n"), $utf8)
+        }
+    } catch {}
 }
 
 $text = ' ' + (Normalize-Text $prompt) + ' '

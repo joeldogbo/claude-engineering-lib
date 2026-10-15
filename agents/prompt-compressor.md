@@ -1,7 +1,7 @@
 ---
 name: prompt-compressor
 description: Compresse les prompts relus à chaque session ou à chaque requête — CLAUDE.md, définitions d'agents et de skills, prompt système d'un chatbot, gabarits de prompts dans le code — pour consommer moins de jetons sans perdre une seule règle. Mesure le gain avant/après et prouve que chaque règle est conservée. Utiliser pour alléger des instructions trop longues ou réduire le coût d'un prompt envoyé à chaque appel d'API.
-triggers: compresser, compression du prompt, alléger le prompt, alléger claude md, prompt trop long, trop de jetons, trop de tokens, claude md
+triggers: compresser, compression du prompt, alléger le prompt, alléger claude md, prompt trop long, trop de jetons, trop de tokens, claude md, ponytail
 group: tooling
 ---
 
@@ -41,6 +41,17 @@ N'invente pas d'abréviations ni de style télégraphique illisible : le texte d
 Avant de modifier, liste les règles du texte original. Après compression, montre pour chacune **où elle se trouve désormais**, ou **pourquoi elle a été retirée** (doublon de telle règle, comportement par défaut). Une règle sans correspondance est une régression : remets-la.
 
 Quand le projet a des tests de comportement (jeu de questions pièges d'un chatbot, évaluations), rejoue-les après compression — avec l'agent `ai-chatbot` pour un chatbot.
+
+## Réduire aussi ce que Claude produit : ponytail
+
+Compresser les consignes réduit ce que Claude **lit**. Une part importante des jetons vient de ce qu'il **écrit** : code superflu, abstractions inutiles, réécritures. [ponytail](https://github.com/DietrichGebert/ponytail) (licence MIT) est un skill qui pousse l'agent à écrire le minimum : avant d'ajouter du code, il vérifie dans l'ordre si c'est nécessaire, si cela existe déjà dans le projet, dans la bibliothèque standard, dans la plateforme ou dans une dépendance installée, puis seulement écrit le minimum, avec un test si la logique le justifie. Il ne réduit jamais la validation, la gestion d'erreurs, la sécurité ni l'accessibilité.
+
+Ce n'est pas un compresseur de prompt : propose-le **en complément** quand le coût vient surtout du code généré (sorties longues, diffs volumineux, part importante des jetons de sortie dans le rapport de `token-monitor`).
+
+- Installation dans Claude Code, avec l'accord de l'utilisateur : `/plugin marketplace add DietrichGebert/ponytail`, puis `/plugin install ponytail@ponytail`. Pour un autre agent : copier son `AGENTS.md` dans le projet.
+- Usage : `/ponytail [lite | full | ultra | off]` règle l'intensité ; `/ponytail-review` relit un diff ; `/ponytail-audit` le dépôt entier ; `/ponytail-debt` recense les raccourcis signalés par des commentaires `shortcut:` ; `/ponytail-gain` affiche ses mesures.
+- Gains annoncés par son auteur, sur son propre banc d'essai (39 tâches, un seul modèle) : environ -45 % de jetons et -53 % de lignes de code. Présente-les comme tels, jamais comme un résultat garanti sur ce projet : mesure avec `token-monitor` avant et après.
+- Vérifie qu'il ne contredit pas les règles du projet : en cas de conflit, les consignes du projet et le protocole commun l'emportent.
 
 ## Restitution
 

@@ -14,6 +14,8 @@
 # affiche la chaîne N1 → N2 pour que le contrôleur les enchaîne au lieu de les paralléliser.
 # Travail interrompu : les fichiers .claude/progress/*.md marqués `statut: en cours` sont
 # signalés à chaque message, pour reprendre là où le travail s'est arrêté.
+# Demande répétée : un message très proche d'un précédent est signalé, pour vérifier ce qui
+# existe déjà au lieu de tout refaire (journal local .claude/hooks/prompts.log).
 #
 # Usage : hook (JSON sur l'entrée standard) ; `--audit` pour vérifier que chaque agent respecte
 # les règles communes (déclencheurs, groupe, protocole, N1 existant) — code 1 sinon.
@@ -26,6 +28,7 @@ export LC_ALL=C
 DIR="${REGULATOR_AGENTS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/agents}"
 PROGRESS_DIR="${REGULATOR_PROGRESS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/progress}"
 LAST_FILE="${REGULATOR_LAST_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/regulator.last}"
+HISTORY_FILE="${REGULATOR_HISTORY_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/prompts.log}"
 MAX="${REGULATOR_MAX:-4}"
 [[ -d "$DIR" ]] || exit 0
 
@@ -125,6 +128,29 @@ if [[ -d "$PROGRESS_DIR" ]]; then
   PENDING="$(grep -il '^statut:[[:space:]]*en cours' "$PROGRESS_DIR"/*.md 2>/dev/null | sed 's#^.*/#.claude/progress/#' | awk '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }')"
   if [[ -n "$PENDING" ]]; then
     echo "[Régulateur] Travail interrompu à reprendre : $PENDING. Lis ces fichiers et propose à l'utilisateur de reprendre à la première étape non cochée, sans refaire les étapes déjà faites."
+  fi
+fi
+
+# Demande répétée : le message est comparé aux 200 précédents du projet, dans un journal local
+# ignoré par git qui ne garde que les mots normalisés (3 lettres et plus, sans doublon).
+# Proche = au moins 6 mots et 75 % de mots communs (indice de Jaccard).
+if [[ -d "$(dirname "$HISTORY_FILE")" ]]; then
+  WORDS="$(REGULATOR_PROMPT="$PROMPT" awk "$NORMALIZE"'
+    BEGIN { n = split(norm(ENVIRON["REGULATOR_PROMPT"]), w, " "); for (i = 1; i <= n; i++) if (length(w[i]) >= 3) u[w[i]] = 1; for (k in u) print k }' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//')"
+  if [[ "$(wc -w <<<"$WORDS")" -ge 6 ]]; then
+    SAME=""
+    if [[ -f "$HISTORY_FILE" ]]; then
+      SAME="$(tail -n 200 "$HISTORY_FILE" | WORDS="$WORDS" awk -F'\t' '
+        BEGIN { n = split(ENVIRON["WORDS"], w, " "); for (i = 1; i <= n; i++) cur[w[i]] = 1 }
+        NF >= 2 { m = split($2, o, " "); c = 0; for (i = 1; i <= m; i++) if (o[i] in cur) c++
+                  if (c / (n + m - c) >= 0.75) last = $1 }
+        END { print last }')"
+    fi
+    if [[ -n "$SAME" ]]; then
+      echo "[Régulateur] Demande très proche d'un message du $SAME : avant de refaire le travail, lance d'abord l'agent request-history (autorisé pour ce message) pour vérifier ce qui existe déjà, puis ne fais que ce qui manque."
+    fi
+    { [[ -f "$HISTORY_FILE" ]] && tail -n 199 "$HISTORY_FILE"; printf '%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "$WORDS"; } >"$HISTORY_FILE.new" 2>/dev/null \
+      && mv "$HISTORY_FILE.new" "$HISTORY_FILE"
   fi
 fi
 
