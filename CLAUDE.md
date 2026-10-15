@@ -79,6 +79,7 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 | `mcp-developer` | Serveurs MCP : transport, outils bien décrits, validation, permissions minimales, tests avec l'inspecteur, déclaration dans `.mcp.json` | Implémentation |
 | `token-monitor` | Consommation de jetons de Claude Code d'après ses journaux locaux : par jour, projet, modèle, sous-agents, sessions ; actions pour consommer moins | Analyse seule |
 | `system-monitor` | Lenteur du poste (Windows, macOS, Linux) : processeur, RAM et swap, disque, usure de la batterie, processus et outils de dev gourmands | Analyse seule |
+| `reverse-engineering` | Étudie une fonctionnalité d'une application existante (site, web, Electron, mobile, bureau, open source) pour la reproduire en mieux : preuves observé/déduit/inconnu, forces et faiblesses, fiche adaptée à la stack, salle blanche | Analyse seule |
 
 ## Skills (`skills/`)
 
@@ -93,6 +94,7 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 | `performance-audit` | Checklist de performance (CPU, mémoire, réseau, cache) |
 | `security-audit` | Audit de sécurité en 6 phases : scan local, CVE via OSV, revue OWASP Web + API, score /100, rapport avec correctifs |
 | `database-design` | Checklist de conception BDD (index, normalisation, transactions) |
+| `hierarchical-data` | Données en arbre : liste d'adjacence, représentation intervallaire, table de clôture, chemin matérialisé — choix du modèle, requêtes vérifiées par un script, intégrité, cas de test |
 | `api-design` | Bonnes pratiques REST/GraphQL/gRPC/WebSocket |
 | `ui-ux-review` | Revue UI/UX complète : espacements, typographie, responsive, couleur, états, références externes |
 | `test-strategy` | Stratégie de couverture de tests, sans imposer de framework |
@@ -104,19 +106,21 @@ Toutes ces règles, et celles que chaque agent applique de son côté, sont réu
 | `prompt-writer` | `/prompt-writer <brouillon>` : réécrit une demande en prompt clair (objectif, périmètre, résultat attendu) avant de l'exécuter — invoqué uniquement par l'utilisateur |
 | `token-usage` | `/token-usage [jours]` : script qui résume la consommation de jetons de Claude Code sans lire le contenu des conversations |
 | `system-health` | `/system-health` : script de diagnostic du poste en lecture seule (Windows, macOS, Linux) |
+| `reverse-engineering` | Méthode de rétro-ingénierie fonctionnelle (inspirée de REA) : questions, sources de preuve par type de cible, registre des preuves, amélioration, vérification de la reconstruction |
+| `library-update` | `/library-update [version]` : met à jour la bibliothèque installée (simulation, application après accord, fusion des fichiers modifiés localement) |
 | `agents-status` | Mod (pas un skill) chargé automatiquement : affiche sous la zone de saisie les agents retenus par le régulateur et ceux au travail, et renomme la ligne d'activité (« Agent backend au travail… ») |
 
 ## Standards (`standards/`)
 
-Fiches de référence condensées, lues à la demande par les agents/skills : `agent-protocol.md` (règles communes à tous les agents : contrôleur, langue, points de reprise, niveaux N1/N2, relais), `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `owasp-api-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `ui-design.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
+Fiches de référence condensées, lues à la demande par les agents/skills : `agent-protocol.md` (règles communes à tous les agents : contrôleur, langue, points de reprise, niveaux N1/N2, gestion des erreurs, relais), `solid.md`, `dry-kiss-yagni.md`, `clean-code.md`, `clean-architecture-hexagonale.md`, `ddd-cqrs.md`, `owasp-top10.md`, `owasp-api-top10.md`, `rest-api-design.md`, `semver-conventional-commits.md`, `ui-design.md`, `psr-php.md` (appliqué seulement si PHP est détecté).
 
 ## Templates (`templates/`)
 
-`pr-description.md`, `message-commit.md`, `adr.md`, `rapport-bug.md`, `rapport-securite.md`, `entree-changelog.md`.
+`pr-description.md`, `message-commit.md`, `adr.md`, `rapport-bug.md`, `rapport-securite.md`, `entree-changelog.md`, `fiche-fonctionnalite.md`.
 
 ## Workflows (`workflows/`)
 
-Invocables via `/workflow <nom>` : `feature-development`, `new-module`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`, `release`.
+Invocables via `/workflow <nom>` : `feature-development`, `new-module`, `bug-fix`, `refactoring`, `security-audit`, `compliance-audit`, `performance-optimization`, `code-review`, `pr-preparation`, `architecture-analysis`, `api-design`, `db-migration`, `pre-production-review`, `release`, `feature-from-reference`.
 
 ## Étendre la bibliothèque
 
