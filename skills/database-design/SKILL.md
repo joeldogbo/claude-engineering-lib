@@ -12,7 +12,8 @@ description: Analyse et conception de schéma de base de données — structure,
 3. **Contraintes d'intégrité** : clés étrangères, unicité, nullabilité cohérentes avec les règles métier réelles (pas seulement validées côté application).
 4. **Index** : présents sur les colonnes filtrées/jointes fréquemment ; absents sur les colonnes peu sélectives ou rarement interrogées (un index inutile coûte en écriture).
 5. **Transactions** : les opérations qui doivent être atomiques le sont-elles réellement ? Niveau d'isolation adapté au besoin (éviter les lectures sales, éviter aussi un niveau trop strict qui cause des verrous inutiles).
-6. **Migrations** : réversibles quand possible, sûres sur un volume de données de production (voir workflow `db-migration` pour le risque de verrouillage sur une table volumineuse).
+6. **Données en arbre** (catégories, organigramme, dossiers, nomenclature) : appliquer le skill `hierarchical-data` pour choisir le modèle et en garantir l'intégrité.
+7. **Migrations** : réversibles quand possible, sûres sur un volume de données de production (voir workflow `db-migration` pour le risque de verrouillage sur une table volumineuse).
 
 ## Restitution
 
