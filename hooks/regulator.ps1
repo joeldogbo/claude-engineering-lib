@@ -29,6 +29,7 @@ try { [Console]::OutputEncoding = $utf8 } catch {}
 $projectDir = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }
 $dir = if ($env:REGULATOR_AGENTS_DIR) { $env:REGULATOR_AGENTS_DIR } else { Join-Path $projectDir '.claude/agents' }
 $progressDir = if ($env:REGULATOR_PROGRESS_DIR) { $env:REGULATOR_PROGRESS_DIR } else { Join-Path $projectDir '.claude/progress' }
+$lastFile = if ($env:REGULATOR_LAST_FILE) { $env:REGULATOR_LAST_FILE } else { Join-Path $projectDir '.claude/hooks/regulator.last' }
 $max = if ($env:REGULATOR_MAX) { [int]$env:REGULATOR_MAX } else { 4 }
 if (-not (Test-Path $dir)) { exit 0 }
 
@@ -131,6 +132,11 @@ $selected = foreach ($agent in $registry) {
 }
 $selected = @($selected | Sort-Object -Property @{ Expression = 'Score'; Descending = $true }, @{ Expression = 'Name'; Descending = $false } -CaseSensitive | Select-Object -First $max)
 
+# Agents retenus, un nom par ligne, pour le mod agents-status qui les affiche sous la saisie.
+if (Test-Path (Split-Path $lastFile)) {
+    try { [IO.File]::WriteAllText($lastFile, (@($selected | ForEach-Object { $_.Name + "`n" }) -join ''), $utf8) } catch {}
+}
+
 if (-not $selected.Count) {
     "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent."
     exit 0
@@ -145,7 +151,8 @@ $list = ($selected | ForEach-Object {
     $item
 }) -join ' ; '
 "[Régulateur] Agents retenus pour ce message : $list."
-"Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison."
+"Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison. Commence la description de chaque appel par le nom de l'agent (ex. « backend : endpoint »)."
+"Si un agent de cette liste n'est pas parmi tes types de sous-agents, la session a démarré avant l'installation des agents (ils ne sont chargés qu'au démarrage) : ne fais pas son travail toi-même en silence, dis d'abord à l'utilisateur de redémarrer la session Claude Code (ou de recharger la fenêtre VS Code)."
 if ($list.Contains('[N1 ')) {
     "Niveaux : un N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1. Jamais en parallèle : N1 d'abord, puis N2 seulement si le N1 a des constats, avec l'accord de l'utilisateur pour la sécurité et le déploiement."
 }

@@ -462,4 +462,5 @@ if [[ -n "$HOOK_MERGE" ]]; then
 fi
 echo
 printf '  %s Ouvre Claude Code ici et décris ta tâche : %s\n' "$(paint "$GREEN" '→')" "$(paint "1;$GREEN" 'les agents se lancent tout seuls.')"
+printf '  %s Claude Code déjà ouvert dans ce dossier (terminal ou VS Code) : %s, les agents ne sont chargés qu'"'"'au démarrage.\n' "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 'redémarre la session')"
 printf '  %s %s\n\n' "$(paint "$GREEN" '★')" "$(paint "$GRAY" "github.com/${REPO}")"

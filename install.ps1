@@ -498,6 +498,7 @@ $__claudeLibInstall = @{ Failed = $false }
         }
         Write-Host ""
         Write-Host ("  " + (Paint $Arrow $Green) + " Ouvre Claude Code ici et d${e}cris ta t${ac}che : " + (Paint "les agents se lancent tout seuls." "1;$Green"))
+        Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Claude Code d${e}j${ag} ouvert dans ce dossier (terminal ou VS Code) : " + (Paint "red${e}marre la session" '1') + ", les agents ne sont charg${e}s qu'au d${e}marrage.")
         Write-Host ("  " + (Paint $Star $Green) + " " + (Paint "github.com/$Repo" $Gray))
         Write-Host ""
     } catch {

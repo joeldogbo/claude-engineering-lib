@@ -100,6 +100,16 @@ Avec des dizaines d'agents, les laisser chacun décider de se lancer mènerait a
 - **Il reprend le travail interrompu** : pour une tâche de plusieurs étapes, l'agent tient un point de reprise dans `.claude/progress/<sujet>.md` et coche chaque étape terminée. Après une coupure de connexion ou une session fermée, le régulateur le signale au message suivant et Claude reprend à la première étape non cochée, sans refaire le reste. Ces fichiers sont locaux : ajoute `.claude/progress/` au `.gitignore` du projet si tu ne veux pas les versionner.
 - **Il impose la langue du projet** : l'agent `language` inscrit dans `.claude/project-context.md` la langue de la documentation, de l'interface et des commits ; tous les agents l'appliquent.
 
+### Voir les agents travailler
+
+Le mod `agents-status` (`.claude/skills/agents-status/`), chargé automatiquement par Claude Code dans les sessions interactives, montre en permanence le travail des agents :
+
+- **sous la zone de saisie**, la ligne d'état affiche `◆ Agents retenus : backend, api` après chaque message, puis `▶ Agents au travail : backend` tant qu'un agent tourne ;
+- **dans la ligne d'activité animée**, le texte devient « Agent backend au travail… » ;
+- **dans le fil de la conversation**, Claude annonce les agents lancés et chaque appel d'agent porte son nom (`backend : endpoint de présence`).
+
+Les agents, comme ce mod, ne sont chargés qu'**au démarrage d'une session** : après une installation, redémarre Claude Code (ou recharge la fenêtre VS Code). Le régulateur écrit sa sélection dans `.claude/hooks/regulator.last`, ignoré par git, que le mod relit.
+
 Pour économiser des jetons, écris `/prompt-writer <ton brouillon>` : Claude transforme une demande floue en prompt clair avant de l'exécuter, ce qui évite les allers-retours et le travail refait. Pour alléger durablement les instructions relues à chaque session, demande simplement de compresser `CLAUDE.md` ou un agent : l'agent `prompt-compressor` s'en charge.
 
 Pour forcer un agent précis, nomme-le (« utilise l'agent `performance` »). Les workflows complets se lancent avec `/workflow <nom>`, par exemple `/workflow feature-development` ou `/workflow security-audit`.

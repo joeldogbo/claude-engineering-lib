@@ -25,6 +25,7 @@ export LC_ALL=C
 
 DIR="${REGULATOR_AGENTS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/agents}"
 PROGRESS_DIR="${REGULATOR_PROGRESS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/progress}"
+LAST_FILE="${REGULATOR_LAST_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/regulator.last}"
 MAX="${REGULATOR_MAX:-4}"
 [[ -d "$DIR" ]] || exit 0
 
@@ -145,6 +146,11 @@ SELECTED="$(registry | REGULATOR_PROMPT="$PROMPT" awk -F'\t' "$NORMALIZE"'
     if (score) printf "%d\t%s\t%s\t%s\n", score, $1, hits, $5
   }' | sort -t "$(printf '\t')" -k1,1nr -k2,2 | head -n "$MAX")"
 
+# Agents retenus, un nom par ligne, pour le mod agents-status qui les affiche sous la saisie.
+if [[ -d "$(dirname "$LAST_FILE")" ]]; then
+  printf '%s\n' "$SELECTED" | awk -F'\t' 'NF > 1 { print $2 }' >"$LAST_FILE" 2>/dev/null || true
+fi
+
 if [[ -z "$SELECTED" ]]; then
   echo "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent."
   exit 0
@@ -162,7 +168,8 @@ LIST="$(printf '%s\n' "$SELECTED" | PAIRS="$PAIRS" awk -F'\t' '
     printf "%s%s%s%s", (NR > 1 ? " ; " : ""), $2, ($3 != "" ? " (" $3 ")" : " (nommé)"), lvl
   }')"
 echo "[Régulateur] Agents retenus pour ce message : $LIST."
-echo "Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison."
+echo "Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison. Commence la description de chaque appel par le nom de l'agent (ex. « backend : endpoint »)."
+echo "Si un agent de cette liste n'est pas parmi tes types de sous-agents, la session a démarré avant l'installation des agents (ils ne sont chargés qu'au démarrage) : ne fais pas son travail toi-même en silence, dis d'abord à l'utilisateur de redémarrer la session Claude Code (ou de recharger la fenêtre VS Code)."
 case "$LIST" in
   *"[N1 "*)
     echo "Niveaux : un N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1. Jamais en parallèle : N1 d'abord, puis N2 seulement si le N1 a des constats, avec l'accord de l'utilisateur pour la sécurité et le déploiement." ;;

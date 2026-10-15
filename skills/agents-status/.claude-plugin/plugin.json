@@ -1,0 +1,9 @@
+{
+  "name": "agents-status",
+  "version": "0.1.0",
+  "description": "Affiche sous la zone de saisie les agents retenus par le régulateur et ceux qui travaillent",
+  "author": {
+    "name": "dogbojoel30"
+  },
+  "types": "./types/index.d.ts"
+}
