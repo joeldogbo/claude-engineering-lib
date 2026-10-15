@@ -15,7 +15,16 @@ $script:logs = @()
 "PowerShell $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition)) - $exe"
 
 function Check([string]$What, [bool]$Ok) {
-    if ($Ok) { "ok   - $What" } else { "FAIL - $What"; $script:fails++ }
+    if ($Ok) { "ok   - $What" } else {
+        "FAIL - $What"
+        $script:fails++
+        # Annotation GitHub Actions : lisible sans ouvrir le journal, avec la derniere sortie de l'installateur.
+        if ($env:GITHUB_ACTIONS) {
+            $last = if ($script:logs.Count) { [string]$script:logs[-1] } else { '' }
+            $detail = ($last -replace '\x1b\[[0-9;]*m', '' -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A')
+            "::error title=FAIL - $What::$($detail.Substring(0, [Math]::Min(3000, $detail.Length)))"
+        }
+    }
 }
 
 # Lance l'installateur dans un processus separe, comme un utilisateur (-File).
