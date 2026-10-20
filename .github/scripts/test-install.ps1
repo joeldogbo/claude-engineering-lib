@@ -51,6 +51,25 @@ Check "installation : CLAUDE.md du projet intact" ((Get-Content (Join-Path $p 'C
 Check "installation : rien copie a la racine" (-not (Test-Path (Join-Path $p 'agents')))
 Check "installation : manifeste ecrit" ((Get-Content (Join-Path $p '.claude/.claude-lib.manifest') -Raw) -match '(?m)^@version ')
 
+# 1 bis. Projet qui a deja son propre .claude/ (CLAUDE.md et agents) : rien d'ecrase, bibliotheque importee
+$ex = Join-Path $work 'existant'
+New-Item -ItemType Directory -Path (Join-Path $ex '.claude/agents') | Out-Null
+Set-Content -Path (Join-Path $ex '.claude/CLAUDE.md') -Value 'consignes du projet'
+Set-Content -Path (Join-Path $ex '.claude/agents/testing.md') -Value @('---', 'name: testing', 'description: tests maison', '---')
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $ex, '-All')
+$exMd = Get-Content (Join-Path $ex '.claude/CLAUDE.md') -Raw
+Check ".claude existant : code de sortie 0" ($r.Code -eq 0)
+Check ".claude existant : CLAUDE.md du projet conserve" ($exMd -match 'consignes du projet')
+Check ".claude existant : bibliotheque importee" ($exMd -match '(?m)^@claude-lib\.md')
+Check ".claude existant : claude-lib.md identique" ((Get-FileHash (Join-Path $root 'CLAUDE.md')).Hash -eq (Get-FileHash (Join-Path $ex '.claude/claude-lib.md')).Hash)
+Check ".claude existant : agent du projet conserve" ((Get-Content (Join-Path $ex '.claude/agents/testing.md') -Raw) -match 'tests maison')
+Check ".claude existant : homonyme signale" ($r.Out -match 'nom qu')
+# Le manifeste est reecrit a chaque passage (date) : hors comparaison.
+$before = Get-ChildItem $ex -Recurse -File -Force -Exclude '.claude-lib.manifest' | ForEach-Object { "$($_.FullName) $((Get-FileHash $_.FullName).Hash)" }
+$r = Invoke-Install @('-Source', $root, '-TargetDir', $ex)
+$after = Get-ChildItem $ex -Recurse -File -Force -Exclude '.claude-lib.manifest' | ForEach-Object { "$($_.FullName) $((Get-FileHash $_.FullName).Hash)" }
+Check ".claude existant : relance sans rien reecrire" (-not (Compare-Object @($before) @($after)))
+
 # 2. Relance : mise a jour, rien a changer
 $r = Invoke-Install @('-TargetDir', $p)
 Check "relance : code de sortie 0" ($r.Code -eq 0)
@@ -227,10 +246,10 @@ Check "version plus ancienne : message explicite" ($r.Out -match 'plus r.cente')
 New-Item -ItemType Directory -Path (Join-Path $cl '.claude-lib.lock') | Out-Null
 $r = Invoke-Install @('-Source', $v2, '-TargetDir', $u)
 Check "installation simultanee : refusee" ($r.Code -ne 0)
-Remove-Item (Join-Path $cl '.claude-lib.lock')
+Remove-Item -Force (Join-Path $cl '.claude-lib.lock')
 
 # Installation anterieure au manifeste : les anciennes versions sont remplacees apres sauvegarde
-Remove-Item $manifest
+Remove-Item -Force $manifest
 Add-Content (Join-Path $cl 'agents/testing.md') 'ancienne'
 $r = Invoke-Install @('-Source', $v2, '-TargetDir', $u)
 Check "sans manifeste : code de sortie 0" ($r.Code -eq 0)

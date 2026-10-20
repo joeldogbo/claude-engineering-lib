@@ -35,11 +35,11 @@ LEVELS = {
 }
 
 
-def run(shell, prompt, progress=None, history=None):
+def run(shell, prompt, progress=None, history=None, agents=AGENTS):
     payload = json.dumps({"prompt_text": prompt, "hook_event_name": "UserPromptSubmit",
                           "cwd": "/tmp/agent-ia-chatbot-paiement"},  # le cwd ne doit jamais compter
                          ensure_ascii=False)  # UTF-8 brut, comme Claude Code (Node)
-    env = dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS, REGULATOR_PROGRESS_DIR=progress or str(ROOT / "absent"),
+    env = dict(os.environ, REGULATOR_AGENTS_DIR=agents, REGULATOR_PROGRESS_DIR=progress or str(ROOT / "absent"),
                REGULATOR_HISTORY_FILE=history or str(ROOT / "absent" / "prompts.log"))
     # Chemin complet via le PATH : sous Windows, un nom nu trouverait le bash de WSL (System32) avant Git Bash.
     if shell == "bash":
@@ -94,6 +94,17 @@ for shell in shells:
         ok = run(shell, "/workflow release", progress) == ""
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] commande slash silencieuse malgré la reprise")
+
+    # Agents propres au projet, sans déclencheurs (fins de ligne Windows) : signalés, avec ou sans agent retenu.
+    with tempfile.TemporaryDirectory() as agents:
+        shutil.copytree(AGENTS, agents, dirs_exist_ok=True)
+        pathlib.Path(agents, "maison.md").write_bytes(b"---\r\nname: maison\r\ndescription: agent du projet\r\n---\r\nconsignes\r\n")
+        none = run(shell, "Merci, c'est parfait", agents=agents)
+        some = run(shell, "Ajoute un écran de profil avec un formulaire", agents=agents)
+        ok = ("Aucun agent de la bibliothèque" in none and "maison" in none
+              and "frontend" in selected(some) and "Agents propres au projet" in some and "maison." in some)
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] agents du projet sans déclencheurs signalés" + ("" if ok else f" -> {none} | {some}"))
 
     # Demande répétée : signalée au second envoi d'un message reformulé, jamais pour un message différent ou court.
     with tempfile.TemporaryDirectory() as hooks:

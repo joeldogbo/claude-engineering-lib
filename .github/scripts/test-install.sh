@@ -30,6 +30,21 @@ check "installation : rien copié à la racine" test ! -e "$P/agents"
 
 check "installation : manifeste écrit" grep -q '^@version ' "$P/.claude/.claude-lib.manifest"
 
+# 1 bis. Projet qui a déjà son propre .claude/ (CLAUDE.md et agents) : rien d'écrasé, bibliothèque importée
+E="$WORK/existant"
+mkdir -p "$E/.claude/agents" && echo "consignes du projet" >"$E/.claude/CLAUDE.md"
+printf -- '---\nname: testing\ndescription: tests maison\n---\n' >"$E/.claude/agents/testing.md"
+run "$WORK/1b.log" --source "$PWD" --dir "$E" --all; code=$?
+check ".claude existant : code de sortie 0" test "$code" -eq 0
+check ".claude existant : CLAUDE.md du projet conservé" grep -q 'consignes du projet' "$E/.claude/CLAUDE.md"
+check ".claude existant : bibliothèque importée" grep -q '^@claude-lib.md' "$E/.claude/CLAUDE.md"
+check ".claude existant : claude-lib.md identique" cmp -s CLAUDE.md "$E/.claude/claude-lib.md"
+check ".claude existant : agent du projet conservé" grep -q 'tests maison' "$E/.claude/agents/testing.md"
+check ".claude existant : homonyme signalé" grep -q "même nom" "$WORK/1b.log"
+cp -r "$E" "$WORK/existant-avant"
+run "$WORK/1c.log" --source "$PWD" --dir "$E"
+check ".claude existant : relance sans rien réécrire" diff -r -x .claude-lib.manifest "$E" "$WORK/existant-avant"
+
 # 2. Relance : mise à jour, rien à changer
 run "$WORK/2.log" --dir "$P"; code=$?
 check "relance : code de sortie 0" test "$code" -eq 0

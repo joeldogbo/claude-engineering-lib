@@ -51,6 +51,19 @@ Depuis l'invite de commandes Windows (`cmd.exe`), où `iwr` n'existe pas :
 powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/joeldogbo/claude-engineering-lib/main/install.ps1 | iex"
 ```
 
+### Projet qui a déjà ses propres agents
+
+L'installation fonctionne aussi dans un projet qui a déjà un dossier `.claude/` :
+
+| Déjà présent dans le projet | Résultat |
+|---|---|
+| `.claude/CLAUDE.md` | Conservé. Les consignes de la bibliothèque sont copiées dans `.claude/claude-lib.md`, et une ligne `@claude-lib.md` est ajoutée à la fin de ton fichier pour les importer. Sans cette ligne, Claude ne lance pas les agents tout seul : ne la retire pas (une relance la remet). |
+| Agent portant le même nom qu'un agent de la bibliothèque | Le tien est conservé, celui de la bibliothèque est mis dans `.claude/updates/agents/<nom>.md.new`. `--force` le met à la place (le tien est sauvegardé), sinon renomme le tien et relance. |
+| Agents sans champ `triggers:` | Ils restent utilisables : le régulateur les signale à chaque message comme « agents propres au projet », et Claude les lance si leur description correspond. Ajoute-leur un `triggers:` pour qu'ils soient sélectionnés comme les autres. |
+| `.claude/settings.json` | Conservé ; le hook du régulateur y est ajouté. Si la fusion est impossible, il est écrit dans `.claude/settings.regulator.json`, à recopier dans `settings.json`. |
+
+Redémarre ensuite la session Claude Code : les agents ne sont chargés qu'au démarrage.
+
 Compatibilité, vérifiée à chaque modification des installateurs par la CI ([`install.yml`](.github/workflows/install.yml)) : `install.sh` sous Linux, macOS et Git Bash (Windows) ; `install.ps1` sous Windows PowerShell 5.1 et PowerShell 7 (Windows, Linux, macOS). Si PowerShell refuse d'exécuter un `install.ps1` téléchargé (politique d'exécution), utiliser la commande `iwr ... | iex` ci-dessus, qui n'y est pas soumise.
 
 ### Choisir les agents à installer

@@ -507,6 +507,8 @@ if [[ $EXISTING -eq 1 ]]; then
 fi
 
 COPY_ITEMS=(skills standards templates workflows hooks)
+# Consignes de la bibliothèque quand le projet a déjà son propre .claude/CLAUDE.md.
+LIB_MD=claude-lib.md
 
 # --- Préparation de l'écriture : dossier accessible, une seule installation à la fois ---
 if [[ $DRY_RUN -eq 0 ]]; then
@@ -559,6 +561,8 @@ fi
 #   conflict modifié chez toi et dans la bibliothèque → conservé, nouvelle version dans updates/
 #   remove   retiré de la bibliothèque, non modifié → supprimé (sauvegardé)
 #   orphan   retiré de la bibliothèque, modifié     → conservé
+#   import   .claude/CLAUDE.md propre au projet    → conservé ; la bibliothèque va dans
+#            claude-lib.md, importé par une ligne @claude-lib.md ajoutée à la fin du sien
 # Sans manifeste (installation antérieure), un fichier différent est une ancienne version :
 # remplacé après sauvegarde, sauf CLAUDE.md, souvent personnalisé.
 awk -F'\t' -v force="$FORCE" -v legacy="$LEGACY" '
@@ -571,6 +575,7 @@ awk -F'\t' -v force="$FORCE" -v legacy="$LEGACY" '
       if (!(p in d)) act = "add"
       else if (d[p] == s[p]) act = "same"
       else if ((p in m) && d[p] == m[p]) act = "update"
+      else if (p == "CLAUDE.md" && !(p in m) && legacy == 0) act = "import"
       else if (force == 1) act = "force"
       else if ((p in m) && s[p] == m[p]) act = "kept"
       else if (legacy == 1 && p != "CLAUDE.md") act = "update"
@@ -582,6 +587,10 @@ awk -F'\t' -v force="$FORCE" -v legacy="$LEGACY" '
 
 count_act() { awk -F'\t' -v a=" $1 " 'index(a, " " $1 " ") { n++ } END { print n + 0 }' "$TMP_DIR/plan"; } # "act1 act2"
 list_act() { awk -F'\t' -v a=" $1 " 'index(a, " " $1 " ") { printf "%s%s", (n++ ? ", " : ""), $2 }' "$TMP_DIR/plan"; }
+# Import déjà en place (claude-lib.md à jour, ligne présente) : rien à écrire.
+if [[ "$(count_act import)" -gt 0 ]] && cmp -s "$SRC_DIR/CLAUDE.md" "$CLAUDE_DIR/$LIB_MD" && grep -q "^@$LIB_MD" "$CLAUDE_DIR/CLAUDE.md"; then
+  awk -F'\t' -v OFS='\t' '$1 == "import" { $1 = "linked" } 1' "$TMP_DIR/plan" >"$TMP_DIR/plan.new" && mv "$TMP_DIR/plan.new" "$TMP_DIR/plan"
+fi
 
 if [[ $DRY_RUN -eq 1 ]]; then
   printf '\n  %s Simulation : rien n'"'"'est écrit. Agents : %s.\n\n' "$(paint "$BADGE_WARN" ' DRY-RUN ')" "$SELECTION_LABEL"
@@ -591,6 +600,7 @@ if [[ $DRY_RUN -eq 1 ]]; then
     $1 == "force"    { print "    ~ " $2 "   (modifié chez toi, remplacé : --force)" }
     $1 == "kept"     { print "    = " $2 "   (modifié chez toi, inchangé dans la bibliothèque : conservé)" }
     $1 == "conflict" { print "    ! " $2 "   (modifié chez toi : conservé, nouvelle version dans .claude/updates/)" }
+    $1 == "import"   { print "    + claude-lib.md   (ton CLAUDE.md est conservé et l'"'"'importe)" }
     $1 == "remove"   { print "    - " $2 "   (retiré de la bibliothèque)" }
     $1 == "orphan"   { print "    ? " $2 "   (retiré de la bibliothèque, modifié chez toi : conservé)" }' "$TMP_DIR/plan"
   printf '\n  Ajoutés %s · mis à jour %s · conflits %s · supprimés %s · inchangés %s\n\n' \
@@ -601,8 +611,8 @@ fi
 # --- Écriture en trois temps : copie à côté, sauvegarde, remplacement — défaite si une étape échoue ---
 STAGE="$CLAUDE_DIR/.claude-lib-staging"
 rm -rf "$STAGE"
-while IFS=$'\t' read -r act p h _; do
-  case "$act" in add | update | force | conflict)
+while IFS=$'\t' read -r act p _; do
+  case "$act" in add | update | force | conflict | import)
     { mkdir -p "$(dirname "$STAGE/$p")" && cp "$SRC_DIR/$p" "$STAGE/$p"; } 2>/dev/null \
       || die "Copie impossible de $p dans $CLAUDE_DIR (disque plein ou droits ?)."
   esac
@@ -622,12 +632,19 @@ created() { printf 'created\t%s\n' "$1" >>"$JOURNAL"; }
 # Copies de conflits d'une installation précédente : mises de côté (régénérées si besoin, remises en cas d'échec).
 if [[ -d "$CLAUDE_DIR/updates" ]]; then mv "$CLAUDE_DIR/updates" "$TMP_DIR/old-updates"; fi
 applied=0
-while IFS=$'\t' read -r act p h _; do
+while IFS=$'\t' read -r act p _; do
   case "$act" in
     add) mkdir -p "$(dirname "$CLAUDE_DIR/$p")"; created "$p"; mv -f "$STAGE/$p" "$CLAUDE_DIR/$p" ;;
     update | force) backup "$p"; mv -f "$STAGE/$p" "$CLAUDE_DIR/$p" ;;
     remove) backup "$p"; rm -f "$CLAUDE_DIR/$p" ;;
     conflict) mkdir -p "$(dirname "$CLAUDE_DIR/updates/$p")"; created "updates/$p.new"; mv -f "$STAGE/$p" "$CLAUDE_DIR/updates/$p.new" ;;
+    import)
+      if [[ -f "$CLAUDE_DIR/$LIB_MD" ]]; then backup "$LIB_MD"; else created "$LIB_MD"; fi
+      mv -f "$STAGE/$p" "$CLAUDE_DIR/$LIB_MD"
+      if ! grep -q "^@$LIB_MD" "$CLAUDE_DIR/$p"; then
+        backup "$p"
+        printf '\n<!-- Bibliothèque d'"'"'ingénierie (agents, régulateur, workflows) : ne pas retirer cette ligne. -->\n@%s\n' "$LIB_MD" >>"$CLAUDE_DIR/$p"
+      fi ;;
     *) continue ;;
   esac
   applied=$((applied + 1))
@@ -643,10 +660,13 @@ awk -F'\t' '$1 ~ /^(add|update|force)$/ { print $2 }' "$TMP_DIR/plan" >"$TMP_DIR
 awk -F'\t' '$1 ~ /^(add|update|force)$/ { print $3 "\t" $2 }' "$TMP_DIR/plan" | LC_ALL=C sort >"$TMP_DIR/expected"
 hash_files "$CLAUDE_DIR" "$TMP_DIR/written" | LC_ALL=C sort >"$TMP_DIR/actual"
 cmp -s "$TMP_DIR/expected" "$TMP_DIR/actual" || die "Vérification après copie échouée : un fichier écrit diffère de la bibliothèque."
+if [[ "$(count_act import)" -gt 0 ]] && ! cmp -s "$SRC_DIR/CLAUDE.md" "$CLAUDE_DIR/$LIB_MD"; then
+  die "Vérification après copie échouée : $LIB_MD diffère de la bibliothèque."
+fi
 
 report_item() { # libellé détail préfixe — DONE si quelque chose a changé, MERGE si conflit, SKIP sinon
   local changed conflicts
-  changed="$(awk -F'\t' -v p="$3" 'index($2, p) == 1 && $1 ~ /^(add|update|force|remove)$/ { n++ } END { print n + 0 }' "$TMP_DIR/plan")"
+  changed="$(awk -F'\t' -v p="$3" 'index($2, p) == 1 && $1 ~ /^(add|update|force|remove|import)$/ { n++ } END { print n + 0 }' "$TMP_DIR/plan")"
   conflicts="$(awk -F'\t' -v p="$3" 'index($2, p) == 1 && $1 == "conflict" { n++ } END { print n + 0 }' "$TMP_DIR/plan")"
   task_start "$1" "$2"
   if [[ $conflicts -gt 0 ]]; then task_end MERGE
@@ -660,7 +680,11 @@ for item in "${COPY_ITEMS[@]}"; do
     report_item ".claude/$item/" "($(find "$SRC_DIR/$item" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' '))" "$item/"
   fi
 done
-report_item ".claude/CLAUDE.md" "" "CLAUDE.md"
+if [[ "$(count_act import)" -gt 0 ]]; then
+  report_item ".claude/CLAUDE.md" "(le tien, qui importe $LIB_MD)" "CLAUDE.md"
+else
+  report_item ".claude/CLAUDE.md" "" "CLAUDE.md"
+fi
 
 # Hook du régulateur dans .claude/settings.json : ajouté à l'existant, sans rien écraser.
 # Sans outil capable de fusionner du JSON (python3, jq), la configuration est mise à côté.
@@ -767,7 +791,14 @@ if [[ "$SELECTION_LABEL" != tous && $EXISTING -eq 0 ]]; then
   printf '  %s Agents : %s. Pour en ajouter plus tard : %s ou %s.\n' "$(paint "$BADGE_WARN" ' INFO ')" "$SELECTION_LABEL" \
     "$(paint 1 '--agents <nom>')" "$(paint 1 '--groups <groupe>')"
 fi
-if [[ $N_CONFLICT -gt 0 ]]; then
+if [[ "$(count_act import)" -gt 0 ]]; then
+  printf '  %s Ton .claude/CLAUDE.md est conservé : les consignes de la bibliothèque sont dans %s, importé par la ligne %s ajoutée à la fin.\n' \
+    "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 ".claude/$LIB_MD")" "$(paint 1 "@$LIB_MD")"
+fi
+if [[ $N_CONFLICT -gt 0 && $EXISTING -eq 0 ]]; then
+  printf '  %s %s fichier(s) du projet portant le même nom qu'"'"'un fichier de la bibliothèque, conservé(s) : %s. La version de la bibliothèque est dans %s ; %s la met à la place (après sauvegarde).\n' \
+    "$(paint "$BADGE_WARN" ' MERGE ')" "$N_CONFLICT" "$(list_act conflict)" "$(paint 1 '.claude/updates/<fichier>.new')" "$(paint 1 '--force')"
+elif [[ $N_CONFLICT -gt 0 ]]; then
   printf '  %s %s fichier(s) modifié(s) chez toi, conservé(s) : %s. La nouvelle version est dans %s, à fusionner ; %s les remplace (après sauvegarde).\n' \
     "$(paint "$BADGE_WARN" ' MERGE ')" "$N_CONFLICT" "$(list_act conflict)" "$(paint 1 '.claude/updates/<fichier>.new')" "$(paint 1 '--force')"
 fi

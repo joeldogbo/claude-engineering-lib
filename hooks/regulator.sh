@@ -16,6 +16,8 @@
 # signalés à chaque message, pour reprendre là où le travail s'est arrêté.
 # Demande répétée : un message très proche d'un précédent est signalé, pour vérifier ce qui
 # existe déjà au lieu de tout refaire (journal local .claude/hooks/prompts.log).
+# Agents propres au projet, sans `triggers:` (installés avant la bibliothèque) : impossibles à
+# filtrer, ils sont signalés à chaque message pour que Claude les choisisse d'après leur description.
 #
 # Usage : hook (JSON sur l'entrée standard) ; `--audit` pour vérifier que chaque agent respecte
 # les règles communes (déclencheurs, groupe, protocole, N1 existant) — code 1 sinon.
@@ -61,6 +63,7 @@ registry() {
       }
       name = ""; t = ""; x = ""; a = ""; g = ""
     }
+    { sub(/\r$/, "") }  # fins de ligne Windows (agents écrits sous Windows)
     FNR == 1     { flush(); front = ($0 == "---"); next }
     !front       { next }
     $0 == "---"  { front = 0; next }
@@ -177,8 +180,15 @@ if [[ -d "$(dirname "$LAST_FILE")" ]]; then
   printf '%s\n' "$SELECTED" | awk -F'\t' 'NF > 1 { print $2 }' >"$LAST_FILE" 2>/dev/null || true
 fi
 
+PROJECT_AGENTS="$(registry | awk -F'\t' '$3 == 0 { printf "%s%s", (n++ ? ", " : ""), $1 }')"
+PROJECT_NOTE="Agents propres au projet, sans déclencheurs (non filtrés par le régulateur) : $PROJECT_AGENTS. Lance l'un d'eux seulement si sa description correspond clairement au message."
+
 if [[ -z "$SELECTED" ]]; then
-  echo "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent."
+  if [[ -n "$PROJECT_AGENTS" ]]; then
+    echo "[Régulateur] Aucun agent de la bibliothèque pour ce message. $PROJECT_NOTE Sinon, réponds directement, sans sous-agent."
+  else
+    echo "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent."
+  fi
   exit 0
 fi
 
@@ -196,6 +206,7 @@ LIST="$(printf '%s\n' "$SELECTED" | PAIRS="$PAIRS" awk -F'\t' '
 echo "[Régulateur] Agents retenus pour ce message : $LIST."
 echo "Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison. Commence la description de chaque appel par le nom de l'agent (ex. « backend : endpoint »)."
 echo "Si un agent de cette liste n'est pas parmi tes types de sous-agents, la session a démarré avant l'installation des agents (ils ne sont chargés qu'au démarrage) : ne fais pas son travail toi-même en silence, dis d'abord à l'utilisateur de redémarrer la session Claude Code (ou de recharger la fenêtre VS Code)."
+if [[ -n "$PROJECT_AGENTS" ]]; then echo "$PROJECT_NOTE"; fi
 case "$LIST" in
   *"[N1 "*)
     echo "Niveaux : un N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1. Jamais en parallèle : N1 d'abord, puis N2 seulement si le N1 a des constats, avec l'accord de l'utilisateur pour la sécurité et le déploiement." ;;

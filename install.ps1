@@ -401,6 +401,8 @@ $__claudeLibInstall = @{ Failed = $false }
     $updatesDir = Join-Path $ClaudeDir 'updates'
     $oldUpdates = Join-Path $ClaudeDir '.claude-lib-old-updates'
     $copyItems = @("skills", "standards", "templates", "workflows", "hooks")
+    # Consignes de la bibliotheque quand le projet a deja son propre .claude/CLAUDE.md.
+    $libMd = 'claude-lib.md'
     # Etat de l'ecriture, pour defaire ce qui a ete fait si l'installation echoue ou est interrompue.
     $Txn = @{ Applying = $false; Locked = $false; CreatedDir = $false; Done = $false; BackupDir = ''; Journal = New-Object System.Collections.ArrayList }
 
@@ -589,6 +591,8 @@ $__claudeLibInstall = @{ Failed = $false }
         #   conflict modifie chez toi et dans la bibliotheque -> conserve, nouvelle version dans updates/
         #   remove   retire de la bibliotheque, non modifie -> supprime (sauvegarde)
         #   orphan   retire de la bibliotheque, modifie     -> conserve
+        #   import   .claude/CLAUDE.md propre au projet    -> conserve ; la bibliotheque va dans
+        #            claude-lib.md, importe par une ligne @claude-lib.md ajoutee a la fin du sien
         # Sans manifeste (installation anterieure), un fichier different est une ancienne version :
         # remplace apres sauvegarde, sauf CLAUDE.md, souvent personnalise.
         $plan = New-Object System.Collections.ArrayList
@@ -597,6 +601,7 @@ $__claudeLibInstall = @{ Failed = $false }
             $act = if (-not $dstHash.ContainsKey($rel)) { 'add' }
                 elseif ($dstHash[$rel] -eq $s) { 'same' }
                 elseif ($inManifest -and $dstHash[$rel] -eq $m) { 'update' }
+                elseif ($rel -eq 'CLAUDE.md' -and -not $inManifest -and -not $legacy) { 'import' }
                 elseif ($Force) { 'force' }
                 elseif ($inManifest -and $s -eq $m) { 'kept' }
                 elseif ($legacy -and $rel -ne 'CLAUDE.md') { 'update' }
@@ -611,6 +616,12 @@ $__claudeLibInstall = @{ Failed = $false }
         }
         $countOf = { param([string[]]$Acts) @($plan | Where-Object { $Acts -contains $_.Act }).Count }
         $pathsOf = { param([string]$Act) (@($plan | Where-Object { $_.Act -eq $Act } | ForEach-Object { $_.Path }) -join ', ') }
+        # Import deja en place (claude-lib.md a jour, ligne presente) : rien a ecrire.
+        $libFile = Join-Path $ClaudeDir $libMd
+        $importLine = { @([IO.File]::ReadAllLines((Join-Path $ClaudeDir 'CLAUDE.md'), $Utf8) | Where-Object { $_.StartsWith("@$libMd") }).Count }
+        foreach ($x in @($plan | Where-Object { $_.Act -eq 'import' })) {
+            if ((Test-Path $libFile) -and (Get-Sha $libFile) -eq $x.Src -and (& $importLine)) { $x.Act = 'linked' }
+        }
 
         if ($DryRun) {
             Write-Host ""
@@ -622,11 +633,13 @@ $__claudeLibInstall = @{ Failed = $false }
                 force    = @('~', "modifi${e} chez toi, remplac${e} : -Force")
                 kept     = @('=', "modifi${e} chez toi, inchang${e} dans la biblioth${eg}que : conserv${e}")
                 conflict = @('!', "modifi${e} chez toi : conserv${e}, nouvelle version dans .claude/updates/")
+                import   = @('+', "ton CLAUDE.md est conserv${e} et importe $libMd")
                 remove   = @('-', "retir${e} de la biblioth${eg}que")
                 orphan   = @('?', "retir${e} de la biblioth${eg}que, modifi${e} chez toi : conserv${e}")
             }
             foreach ($x in $plan) {
-                if ($marks.ContainsKey($x.Act)) { Write-Host ("    " + $marks[$x.Act][0] + " " + $x.Path + "   (" + $marks[$x.Act][1] + ")") }
+                $shown = if ($x.Act -eq 'import') { $libMd } else { $x.Path }
+            if ($marks.ContainsKey($x.Act)) { Write-Host ("    " + $marks[$x.Act][0] + " " + $shown + "   (" + $marks[$x.Act][1] + ")") }
             }
             Write-Host ""
             Write-Host ("  Ajout${e}s $(& $countOf 'add') $Dot mis ${ag} jour $(& $countOf 'update','force') $Dot conflits $(& $countOf 'conflict') $Dot supprim${e}s $(& $countOf 'remove') $Dot inchang${e}s $(& $countOf 'same')")
@@ -650,7 +663,7 @@ $__claudeLibInstall = @{ Failed = $false }
         # --- Ecriture en trois temps : copie a cote, sauvegarde, remplacement -- defaite si une etape echoue ---
         if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
         foreach ($x in $plan) {
-            if (@('add', 'update', 'force', 'conflict') -notcontains $x.Act) { continue }
+            if (@('add', 'update', 'force', 'conflict', 'import') -notcontains $x.Act) { continue }
             $staged = Join-Path $stageDir $x.Path
             try {
                 New-Item -ItemType Directory -Path (Split-Path $staged) -Force | Out-Null
@@ -682,6 +695,14 @@ $__claudeLibInstall = @{ Failed = $false }
                 New-Item -ItemType Directory -Path (Split-Path $newCopy) -Force | Out-Null
                 Add-Journal 'created' "updates/$($x.Path).new"
                 Move-Item -LiteralPath $staged $newCopy -Force
+            } elseif ($x.Act -eq 'import') {
+                if (Test-Path $libFile) { Backup-File $libMd } else { Add-Journal 'created' $libMd }
+                Move-Item -LiteralPath $staged $libFile -Force
+                if (-not (& $importLine)) {
+                    Backup-File $x.Path
+                    $note = "`n<!-- Biblioth${eg}que d'ing${e}nierie (agents, r${e}gulateur, workflows) : ne pas retirer cette ligne. -->`n@$libMd`n"
+                    [IO.File]::AppendAllText($file, $note, $Utf8)
+                }
             } else { continue }
             $applied++
             # Reserve aux tests : simule une panne apres N ecritures pour verifier la restauration.
@@ -694,6 +715,9 @@ $__claudeLibInstall = @{ Failed = $false }
             if (@('add', 'update', 'force') -contains $x.Act -and (Get-Sha (Join-Path $ClaudeDir $x.Path)) -ne $x.Src) {
                 throw "V${e}rification apr${eg}s copie ${e}chou${e}e : $($x.Path) diff${eg}re de la biblioth${eg}que."
             }
+            if ($x.Act -eq 'import' -and (Get-Sha $libFile) -ne $x.Src) {
+                throw "V${e}rification apr${eg}s copie ${e}chou${e}e : $libMd diff${eg}re de la biblioth${eg}que."
+            }
         }
 
         # DONE si quelque chose a change, MERGE si conflit, SKIP sinon.
@@ -701,7 +725,7 @@ $__claudeLibInstall = @{ Failed = $false }
             $mine = @($plan | Where-Object { $_.Path.StartsWith($Prefix) })
             Write-TaskStart $Label $Detail
             if (@($mine | Where-Object { $_.Act -eq 'conflict' }).Count) { Write-TaskEnd 'MERGE' }
-            elseif (@($mine | Where-Object { @('add', 'update', 'force', 'remove') -contains $_.Act }).Count) { Write-TaskEnd 'DONE' }
+            elseif (@($mine | Where-Object { @('add', 'update', 'force', 'remove', 'import') -contains $_.Act }).Count) { Write-TaskEnd 'DONE' }
             else { Write-TaskEnd 'SKIP' }
         }
         Write-Report ".claude/agents/" "($($selected.Count)/$($allAgents.Count) $Dot $label)" 'agents/'
@@ -709,7 +733,8 @@ $__claudeLibInstall = @{ Failed = $false }
             $srcItem = Join-Path $srcRoot $item
             if (Test-Path $srcItem) { Write-Report ".claude/$item/" ("(" + @(Get-ChildItem $srcItem).Count + ")") "$item/" }
         }
-        Write-Report ".claude/CLAUDE.md" "" 'CLAUDE.md'
+        $nImport = & $countOf 'import'
+        Write-Report ".claude/CLAUDE.md" $(if ($nImport) { "(le tien, qui importe $libMd)" } else { "" }) 'CLAUDE.md'
 
         # Hook du regulateur dans .claude/settings.json : ajoute a l'existant, sans rien ecraser.
         # Un fichier illisible n'est jamais reecrit : la configuration a ajouter est mise a cote.
@@ -805,7 +830,12 @@ $__claudeLibInstall = @{ Failed = $false }
         if ($label -ne 'tous' -and -not $existing) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Agents : $label. Pour en ajouter plus tard : " + (Paint '-Agents <nom>' '1') + " ou " + (Paint '-Groups <groupe>' '1') + ".")
         }
-        if ($nConflict) {
+        if ($nImport) {
+            Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Ton .claude/CLAUDE.md est conserv${e} : les consignes de la biblioth${eg}que sont dans " + (Paint ".claude/$libMd" '1') + ", import${e} par la ligne " + (Paint "@$libMd" '1') + " ajout${e}e ${ag} la fin.")
+        }
+        if ($nConflict -and -not $existing) {
+            Write-Host ("  " + (Paint " MERGE " $BadgeWarn) + " $nConflict fichier(s) du projet portant le m${e}me nom qu'un fichier de la biblioth${eg}que, conserv${e}(s) : $(& $pathsOf 'conflict'). La version de la biblioth${eg}que est dans " + (Paint '.claude/updates/<fichier>.new' '1') + " ; " + (Paint '-Force' '1') + " la met ${ag} la place (apr${eg}s sauvegarde).")
+        } elseif ($nConflict) {
             Write-Host ("  " + (Paint " MERGE " $BadgeWarn) + " $nConflict fichier(s) modifi${e}(s) chez toi, conserv${e}(s) : $(& $pathsOf 'conflict'). La nouvelle version est dans " + (Paint '.claude/updates/<fichier>.new' '1') + ", ${ag} fusionner ; " + (Paint '-Force' '1') + " les remplace (apr${eg}s sauvegarde).")
         }
         if ($nOrphan) {
