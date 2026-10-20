@@ -47,6 +47,8 @@ GROUPS_WANTED="${CLAUDE_LIB_GROUPS:-}"
 AGENTS_WANTED="${CLAUDE_LIB_AGENTS:-}"
 ALL="${CLAUDE_LIB_ALL:-0}"
 YES="${CLAUDE_LIB_YES:-0}"
+SUMS_FILE=""
+INTEGRITY_NOTE=""
 
 # --- Affichage : couleurs ANSI 256, désactivées hors terminal ou avec NO_COLOR ---
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then USE_COLOR=1; else USE_COLOR=0; fi
@@ -310,8 +312,21 @@ else
   SRC_DIR="$(find "$TMP_DIR/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
   [[ -n "$SRC_DIR" && -f "$SRC_DIR/CLAUDE.md" && -d "$SRC_DIR/agents" ]] || die "Archive incomplète : CLAUDE.md ou agents/ manquant."
   task_end DONE
+  # Empreintes publiées avec la release : un fichier altéré (miroir, proxy, tag déplacé) est refusé.
+  if [[ -n "$VERSION" && "$VERSION" != main ]]; then
+    task_start "Intégrité" "(SHA256SUMS)"
+    if curl -fsSL --retry 2 "https://github.com/${REPO}/releases/download/${VERSION}/SHA256SUMS" -o "$TMP_DIR/SHA256SUMS" 2>/dev/null; then
+      SUMS_FILE="$TMP_DIR/SHA256SUMS"; task_end DONE
+    else
+      task_end SKIP; INTEGRITY_NOTE="Release sans empreintes publiées (SHA256SUMS) : intégrité non vérifiée."
+    fi
+  else
+    INTEGRITY_NOTE="Branche main : pas d'empreintes publiées, intégrité non vérifiée. Préfère une release (--version vX.Y.Z)."
+  fi
   echo
 fi
+# Réservé aux tests : fichier d'empreintes local, à la place de celui de la release.
+if [[ -n "${CLAUDE_LIB_TEST_SUMS:-}" ]]; then SUMS_FILE="$CLAUDE_LIB_TEST_SUMS"; INTEGRITY_NOTE=""; fi
 if [[ $EXISTING -eq 1 ]]; then
   if [[ $LEGACY -eq 1 ]]; then
     printf '  %s %s\n' "$(paint "$BADGE_WARN" ' UPDATE ')" "Installation existante sans manifeste (version antérieure) → $NEW_VERSION"
@@ -550,6 +565,13 @@ hash_files "$SRC_DIR" "$TMP_DIR/files" >"$TMP_DIR/hash-src"
 hash_files "$CLAUDE_DIR" "$TMP_DIR/paths" | LC_ALL=C sort -u >"$TMP_DIR/hash-dst"
 if [[ "$(wc -l <"$TMP_DIR/hash-src")" -ne "$(wc -l <"$TMP_DIR/files")" ]]; then
   die "Fichiers de la bibliothèque illisibles dans la source (archive incomplète ?)."
+fi
+# Intégrité : chaque fichier à installer doit avoir l'empreinte publiée avec la release.
+if [[ -n "$SUMS_FILE" ]]; then
+  ALTERED="$(awk -F'\t' '
+    FILENAME == ARGV[1] { split($0, f, " "); h = f[1]; p = $0; sub(/^[^ ]+ +\*?/, "", p); sub(/^\.\//, "", p); sub(/\r$/, "", p); sum[p] = tolower(h); next }
+    sum[$2] != tolower($1) { printf "%s%s", (n++ ? ", " : ""), $2 }' "$SUMS_FILE" "$TMP_DIR/hash-src")"
+  [[ -z "$ALTERED" ]] || die "Intégrité : fichier(s) différent(s) de la release publiée, installation refusée : $ALTERED."
 fi
 
 # Une ligne par fichier : action<TAB>chemin<TAB>empreinte source<TAB>empreinte du manifeste.
@@ -807,6 +829,9 @@ if [[ $N_ORPHAN -gt 0 ]]; then
 fi
 if [[ -d "$BACKUP_DIR" ]]; then
   printf '  %s Anciennes versions sauvegardées dans %s.\n' "$(paint "$BADGE_WARN" ' INFO ')" "$(paint 1 ".claude/backups/${BACKUP_DIR##*/}")"
+fi
+if [[ -n "$INTEGRITY_NOTE" ]]; then
+  printf '  %s %s\n' "$(paint "$BADGE_WARN" ' INFO ')" "$INTEGRITY_NOTE"
 fi
 if [[ -n "$HOOK_MERGE" ]]; then
   printf '  %s .claude/settings.json laissé intact : le hook du régulateur est dans %s, à fusionner.\n' \

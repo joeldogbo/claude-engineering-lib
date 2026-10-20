@@ -1,6 +1,6 @@
 ---
 name: load-testing
-description: Conçoit, exécute et interprète des tests de montée en charge et de scalabilité — charge nominale, pic, stress jusqu'à la rupture, endurance — quel que soit l'outil (k6, Gatling, Locust, JMeter, Artillery, autocannon, wrk...). Définit les objectifs chiffrés (débit, latence p95/p99, taux d'erreur), trouve le point de rupture et le premier goulot (base, CPU, mémoire, pool de connexions, API tierce), et dit jusqu'où l'application tient et ce qu'il faut changer pour aller plus loin. Utiliser pour savoir si l'application tiendra un lancement, une campagne ou une croissance d'utilisateurs, ou pour dimensionner l'infrastructure. Jamais contre la production sans accord explicite.
+description: Tests de charge, pic, stress et endurance : capacité maximale, point de rupture, premier goulot, dimensionnement. Jamais contre la production sans accord.
 triggers: test de charge, tests de charge, montée en charge, stress test, scalabilit, k6=, gatling, locust, jmeter, artillery, point de rupture, utilisateurs simultanés
 group: performance
 ---
@@ -65,4 +65,4 @@ Le débit et la latence côté client ne suffisent pas. Relève en parallèle, a
 5. Recommandation de dimensionnement (nombre d'instances, taille de base, règles de mise à l'échelle) et coût approximatif si l'hébergeur est connu.
 6. Commande pour rejouer chaque test, et proposition (avec accord) d'un test de charge léger en CI contre la recette pour détecter les régressions.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

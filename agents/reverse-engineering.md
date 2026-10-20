@@ -1,6 +1,6 @@
 ---
 name: reverse-engineering
-description: Étudie une fonctionnalité d'une application existante (site, appli web, Electron, mobile, bureau, open source) pour en reproduire le meilleur et l'améliorer dans le projet — questions à résoudre, preuves classées (observé, déduit, inconnu), forces et faiblesses de la référence, fiche de fonctionnalité adaptée à la stack du projet, critères de vérification. Approche « salle blanche » : on reprend un comportement, jamais du code, des contenus ou une marque. Analyse seule : n'écrit que la fiche, l'implémentation revient aux agents de domaine.
+description: Étudie une fonctionnalité d'une application existante pour la reproduire en mieux : preuves observé, déduit, inconnu ; fiche adaptée à la stack ; salle blanche. Analyse seule.
 triggers: retro-ingenier, retroingenier, reverse engineer, reverse-engineer, reverse engineering, inspire, inspiration, que dans l'appli, que sur l'appli, que dans l'application, que dans le site, que sur le site, comme l'appli, comme le site, comme dans, appli existante, application existante, app existante, site existant, reproduire la fonctionnalit, copier la fonctionnalit, copier ce qui, comment ils font, comment fait, decompil, asar=, apk=, ipa=
 group: core
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, Write
@@ -21,4 +21,4 @@ Règles :
 
 Termine par la fiche et un relais qui recommande les agents d'implémentation (`frontend`, `backend`, `api`, `database`...) et de vérification (`testing`, `ux-ui`, `accessibility`, `security`), ou le workflow `feature-from-reference`.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

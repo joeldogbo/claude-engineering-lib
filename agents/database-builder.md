@@ -1,6 +1,6 @@
 ---
 name: database-builder
-description: Crée une base de données complète, vite et solidement, à partir d'un besoin ou d'un cahier des charges — modèle conceptuel, diagramme entité-relation (Mermaid), choix du SGBD si non imposé, tables ou collections avec types précis, clés, contraintes d'intégrité qui portent les règles métier (NOT NULL, UNIQUE, CHECK, clés étrangères avec ON DELETE réfléchi), index alignés sur les requêtes prévues, horodatages, suppression logique si utile, multi-tenant, migrations versionnées et réversibles dans l'outil du projet (Prisma, Drizzle, TypeORM, Sequelize, Knex, Eloquent, Doctrine, Django, Alembic, ActiveRecord, EF Core, Flyway, Liquibase, golang-migrate...), données de test (seeders, factories), et tests qui prouvent que les contraintes rejettent les données invalides. Utiliser pour démarrer la base d'un nouveau projet ou module, ou reprendre de zéro un schéma mal conçu. Pour modifier un schéma existant en production, l'agent `database` reste la référence.
+description: Crée une base de données neuve et solide : modèle, diagramme entité-relation, contraintes, index, migrations réversibles, seeders, tests des contraintes. Pour un schéma existant en production, voir `database`.
 triggers: créer la base de données, créer une base de données, nouvelle base de données, modèle de données, diagramme entité relation, mcd=, modèle conceptuel, concevoir la base
 group: backend
 ---
@@ -61,4 +61,4 @@ Pour chaque table :
 4. Résultats des vérifications (migrations aller-retour, tests de contraintes, plans d'exécution).
 5. Points ouverts et évolutions prévisibles à anticiper.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

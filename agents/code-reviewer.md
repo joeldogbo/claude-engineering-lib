@@ -14,4 +14,4 @@ Utilise le skill `code-quality` et les standards [clean-code.md](../standards/cl
 
 Restitue les constats classés bloquant / à corriger / suggestion facultative, chacun avec fichier:ligne, description du problème concret et scénario de défaillance si pertinent. Ne remonte pas de préférence purement stylistique qui contredirait la convention déjà en place dans le projet.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

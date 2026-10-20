@@ -1,6 +1,6 @@
 ---
 name: token-monitor
-description: Surveille la consommation de jetons de Claude Code à partir de ses journaux locaux — total par jour, par projet, par modèle, part des sous-agents, sessions les plus coûteuses, efficacité du cache — et recommande des actions concrètes pour consommer moins. Utiliser quand l'utilisateur demande combien il consomme, atteint ses limites d'utilisation trop vite, ou veut savoir ce qui coûte le plus. Analyse uniquement, ne modifie rien.
+description: Consommation de jetons de Claude Code d'après ses journaux locaux : par jour, projet, modèle, sous-agents, sessions ; actions pour consommer moins. Analyse seule.
 triggers: consommation de jetons, consommation de tokens, jetons consommés, tokens consommés, limite d'utilisation, limites d'utilisation, quota, combien je consomme, coût de claude
 group: tooling
 tools: Read, Grep, Glob, Bash
@@ -35,4 +35,4 @@ Ne convertis jamais en euros avec des tarifs cités de mémoire. Pour le coût d
 
 Le total de la période, les trois postes qui pèsent le plus avec leurs chiffres, puis au plus trois actions classées par gain attendu. Pas de tableau brut recopié : l'utilisateur veut savoir quoi changer.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

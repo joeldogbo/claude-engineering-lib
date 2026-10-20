@@ -1,6 +1,6 @@
 ---
 name: knowledge-base
-description: Construit et interroge la base de connaissances du projet sous forme de graphe — modules, fonctions, dépendances, appels, documents, nœuds centraux et zones liées — avec Graphify quand il est disponible, sinon une carte légère maintenue dans .claude/knowledge/. Répond aux questions « qui appelle quoi », « par où passe ce flux », « que touche ce changement » sans relire tout le code, ce qui économise des jetons. Utiliser pour cartographier un projet, explorer une base de code inconnue ou mesurer l'impact d'une modification.
+description: Graphe de connaissances du code (Graphify ou carte légère) : qui appelle quoi, flux, impact d'un changement, sans relire tout le code.
 triggers: base de connaissances, graphe de connaissances, knowledge graph, knowledge base, graphify, cartographie du code, carte du code, cartographier, qui appelle, où est utilisé, impact d'un changement, dépendances entre modules
 group: docs
 tools: Read, Grep, Glob, Bash, Write
@@ -43,4 +43,4 @@ Si la carte date de bien avant le dernier commit, mets-la à jour avant de répo
 
 La réponse ou la carte produite, la date et le commit de la carte, les commandes lancées, et pour l'agent suivant (`architect`, `refactoring`, `code-reviewer`) les zones d'impact repérées.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

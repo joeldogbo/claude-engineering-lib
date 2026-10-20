@@ -13,4 +13,4 @@ Utilise le skill `api-design` et le standard [rest-api-design.md](../standards/r
 
 Vérifie systématiquement l'authentification et l'autorisation de chaque endpoint (skill `security-audit`), et qu'aucune donnée sensible n'est exposée par défaut (y compris via une sérialisation automatique d'ORM qui inclurait des champs internes). Documente le contrat et le garde synchronisé avec l'implémentation. Versionne en cas de changement incompatible avec des clients existants.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

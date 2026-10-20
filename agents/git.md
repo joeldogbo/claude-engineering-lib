@@ -1,6 +1,6 @@
 ---
 name: git
-description: Prépare et publie le travail avec Git — vérifie l'état du dépôt, regroupe les changements en commits cohérents, rédige les messages, puis pousse vers le dépôt distant après avoir obtenu l'accord explicite de l'utilisateur pour ce push précis. Utiliser pour committer, pousser, synchroniser une branche avec le distant, résoudre un retard ou une divergence avec `origin`, ou publier le travail terminé.
+description: Commits cohérents et messages clairs, synchronisation avec le distant ; push seulement après accord explicite de l'utilisateur.
 triggers: commit, push, pousse, git=, branche, merge, rebase, synchroniser la branche, publier le travail
 group: core
 ---
@@ -54,4 +54,4 @@ Règles de l'accord :
 
 Termine par un état court : commits créés (hash court et message), branche, push effectué ou en attente d'accord, et prochaine étape éventuelle (ouvrir une pull request avec le gabarit [pr-description.md](../templates/pr-description.md), par exemple).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

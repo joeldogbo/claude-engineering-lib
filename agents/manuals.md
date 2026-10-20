@@ -1,6 +1,6 @@
 ---
 name: manuals
-description: Rédige et tient à jour les trois manuels d'un projet — manuel développeur (installer, comprendre l'architecture, contribuer, tester), manuel utilisateur (tâches pas à pas, captures à prévoir, FAQ, messages d'erreur) et manuel de déploiement (prérequis, variables d'environnement, mise en production, migration, rollback, sauvegarde, supervision) — à partir du code réel, chaque commande vérifiée. Utiliser pour créer un manuel, préparer une passation ou une mise en production, ou quand un manuel ne correspond plus au projet.
+description: Manuels développeur, utilisateur et de déploiement rédigés depuis le code réel, commandes vérifiées.
 triggers: manuel=, manuels=, manuel développeur, manuel utilisateur, manuel de déploiement, mode d'emploi, guide d'installation, guide de déploiement, guide développeur, onboarding, passation, prise en main
 group: docs
 tools: Read, Grep, Glob, Bash, Edit, Write
@@ -45,4 +45,4 @@ Lecteur : la personne qui met en production, éventuellement en urgence.
 - Un manuel court et juste vaut mieux qu'un manuel complet et faux : supprime ce qui ne correspond plus au code.
 - Indique en tête de chaque manuel la date et le commit de la dernière vérification.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

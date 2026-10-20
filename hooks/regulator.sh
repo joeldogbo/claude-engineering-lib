@@ -83,7 +83,11 @@ if [[ "${1:-}" == "--audit" ]]; then
     GROUPS_KNOWN="$(awk -F'|' '$1 == "group" { printf " %s", $2 }' "$DIR/../profiles.conf")"
   fi
   NO_PROTOCOL="$(grep -L 'agent-protocol\.md' "$DIR"/*.md 2>/dev/null | sed 's#^.*/##; s#\.md$##' | tr '\n' ' ')"
-  registry | awk -F'\t' -v known="$GROUPS_KNOWN" -v noproto="$NO_PROTOCOL" '
+  NO_GUARD="$(grep -L 'garde-fou non négociable' "$DIR"/*.md 2>/dev/null | sed 's#^.*/##; s#\.md$##' | tr '\n' ' ')"
+  # Caractères invisibles (largeur nulle, inversion de sens, BOM) : servent à cacher des consignes.
+  HIDDEN="$(find "$DIR" "$DIR/../skills" "$DIR/../standards" "$DIR/../workflows" "$DIR/../templates" -name '*.md' \
+    -exec grep -lE $'\xe2\x80[\x8b-\x8f\xaa-\xae]|\xe2\x81[\xa0-\xa4\xa6-\xa9]|\xef\xbb\xbf' {} + 2>/dev/null | sed 's#^.*/\.\./##; s#^.*/agents/#agents/#' | tr '\n' ' ')"
+  registry | awk -F'\t' -v known="$GROUPS_KNOWN" -v noproto="$NO_PROTOCOL" -v noguard="$NO_GUARD" -v hidden="$HIDDEN" '
     { agents++; names[$1] = 1
       if ($3 == 0) missing = missing " " $1
       if ($6 == "") nogroup = nogroup " " $1
@@ -92,15 +96,17 @@ if [[ "${1:-}" == "--audit" ]]; then
       n = split($2, t, "|"); for (i = 2; i <= n; i++) { owners[t[i]] = owners[t[i]] " " $1; count[t[i]]++ } }
     END {
       for (a in after) { m = split(after[a], x, "|"); for (i = 1; i <= m; i++) if (!(x[i] in names)) badafter = badafter " " a " (" x[i] ")" }
-      sub(/ +$/, "", noproto)
+      sub(/ +$/, "", noproto); sub(/ +$/, "", noguard); sub(/ +$/, "", hidden)
       printf "%d agents lus.\n", agents
       if (missing != "") printf "Sans déclencheurs (jamais lancés, sauf par leur nom) :%s\n", missing
       if (nogroup != "") printf "Sans groupe (group:, requis par l installation par groupe) :%s\n", nogroup
       if (badgroup != "") printf "Groupe absent de profiles.conf :%s\n", badgroup
       if (noproto != "") printf "Sans protocole commun (standards/agent-protocol.md) : %s\n", noproto
       if (badafter != "") printf "N1 introuvable dans after: :%s\n", badafter
+      if (noguard != "") printf "Sans garde-fou (aucun code malveillant, aucune fraude) : %s\n", noguard
+      if (hidden != "") printf "Caractères invisibles (consignes cachées ?) : %s\n", hidden
       for (k in count) if (count[k] > 1) { shared = 1; printf "Déclencheur partagé « %s » :%s\n", k, owners[k] }
-      bad = (missing != "" || nogroup != "" || badgroup != "" || noproto != "" || badafter != "")
+      bad = (missing != "" || nogroup != "" || badgroup != "" || noproto != "" || badafter != "" || noguard != "" || hidden != "")
       if (!bad && !shared) print "Aucun problème."
       exit bad
     }'
@@ -130,7 +136,7 @@ case "$PROMPT" in /*|"") exit 0 ;; esac
 if [[ -d "$PROGRESS_DIR" ]]; then
   PENDING="$(grep -il '^statut:[[:space:]]*en cours' "$PROGRESS_DIR"/*.md 2>/dev/null | sed 's#^.*/#.claude/progress/#' | awk '{ printf "%s%s", (NR > 1 ? ", " : ""), $0 }')"
   if [[ -n "$PENDING" ]]; then
-    echo "[Régulateur] Travail interrompu à reprendre : $PENDING. Lis ces fichiers et propose à l'utilisateur de reprendre à la première étape non cochée, sans refaire les étapes déjà faites."
+    echo "[Régulateur] Travail interrompu à reprendre (règle 10) : $PENDING."
   fi
 fi
 
@@ -150,7 +156,7 @@ if [[ -d "$(dirname "$HISTORY_FILE")" ]]; then
         END { print last }')"
     fi
     if [[ -n "$SAME" ]]; then
-      echo "[Régulateur] Demande très proche d'un message du $SAME : avant de refaire le travail, lance d'abord l'agent request-history (autorisé pour ce message) pour vérifier ce qui existe déjà, puis ne fais que ce qui manque."
+      echo "[Régulateur] Demande très proche d'un message du $SAME : lance d'abord request-history, puis ne fais que ce qui manque."
     fi
     { [[ -f "$HISTORY_FILE" ]] && tail -n 199 "$HISTORY_FILE"; printf '%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "$WORDS"; } >"$HISTORY_FILE.new" 2>/dev/null \
       && mv "$HISTORY_FILE.new" "$HISTORY_FILE"
@@ -181,14 +187,12 @@ if [[ -d "$(dirname "$LAST_FILE")" ]]; then
 fi
 
 PROJECT_AGENTS="$(registry | awk -F'\t' '$3 == 0 { printf "%s%s", (n++ ? ", " : ""), $1 }')"
-PROJECT_NOTE="Agents propres au projet, sans déclencheurs (non filtrés par le régulateur) : $PROJECT_AGENTS. Lance l'un d'eux seulement si sa description correspond clairement au message."
+# Sortie minimale, relue à chaque message : les règles d'usage sont dans CLAUDE.md (règles 1, 6, 9, 12).
+PROJECT_NOTE="[Régulateur] Agents du projet sans triggers (à lancer seulement si leur description correspond) : $PROJECT_AGENTS."
 
 if [[ -z "$SELECTED" ]]; then
-  if [[ -n "$PROJECT_AGENTS" ]]; then
-    echo "[Régulateur] Aucun agent de la bibliothèque pour ce message. $PROJECT_NOTE Sinon, réponds directement, sans sous-agent."
-  else
-    echo "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent."
-  fi
+  echo "[Régulateur] Aucun agent de la bibliothèque."
+  if [[ -n "$PROJECT_AGENTS" ]]; then echo "$PROJECT_NOTE"; fi
   exit 0
 fi
 
@@ -203,11 +207,5 @@ LIST="$(printf '%s\n' "$SELECTED" | PAIRS="$PAIRS" awk -F'\t' '
     else if ($2 in n2) lvl = " [N1 → " n2[$2] "]"
     printf "%s%s%s%s", (NR > 1 ? " ; " : ""), $2, ($3 != "" ? " (" $3 ")" : " (nommé)"), lvl
   }')"
-echo "[Régulateur] Agents retenus pour ce message : $LIST."
-echo "Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison. Commence la description de chaque appel par le nom de l'agent (ex. « backend : endpoint »)."
-echo "Si un agent de cette liste n'est pas parmi tes types de sous-agents, la session a démarré avant l'installation des agents (ils ne sont chargés qu'au démarrage) : ne fais pas son travail toi-même en silence, dis d'abord à l'utilisateur de redémarrer la session Claude Code (ou de recharger la fenêtre VS Code)."
+echo "[Régulateur] Agents retenus : $LIST."
 if [[ -n "$PROJECT_AGENTS" ]]; then echo "$PROJECT_NOTE"; fi
-case "$LIST" in
-  *"[N1 "*)
-    echo "Niveaux : un N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1. Jamais en parallèle : N1 d'abord, puis N2 seulement si le N1 a des constats, avec l'accord de l'utilisateur pour la sécurité et le déploiement." ;;
-esac

@@ -1,7 +1,7 @@
 ---
 name: prompt-compressor
-description: Compresse les prompts relus à chaque session ou à chaque requête — CLAUDE.md, définitions d'agents et de skills, prompt système d'un chatbot, gabarits de prompts dans le code — pour consommer moins de jetons sans perdre une seule règle. Mesure le gain avant/après et prouve que chaque règle est conservée. Utiliser pour alléger des instructions trop longues ou réduire le coût d'un prompt envoyé à chaque appel d'API.
-triggers: compresser, compression du prompt, alléger le prompt, alléger claude md, prompt trop long, trop de jetons, trop de tokens, claude md, ponytail
+description: Réduit les jetons consommés : compresse CLAUDE.md, agents, skills et prompts système sans perdre de règle, gain mesuré ; conseille pour des demandes et des réponses plus courtes.
+triggers: compresser, compression du prompt, alléger le prompt, alléger claude md, prompt trop long, trop de jetons, trop de tokens, claude md, ponytail, gaspille, économiser des jetons, économiser des tokens, moins de jetons, moins de tokens, réponses trop longues
 group: tooling
 ---
 
@@ -16,6 +16,22 @@ Recense les prompts du projet et classe-les par **taille × fréquence de charge
 - chargés **à la demande** : le corps d'un agent, d'un skill ou d'un workflow, lu seulement quand il est utilisé → priorité plus faible.
 
 Mesure chaque fichier. Sans outil de comptage du fournisseur (API de comptage de jetons, tokenizer), donne une **estimation** et dis-le : environ 4 caractères par jeton en anglais, un peu moins en français.
+
+Commence par le **coût fixe** de la session, payé avant le premier mot de l'utilisateur :
+
+```bash
+wc -c CLAUDE.md .claude/CLAUDE.md .claude/claude-lib.md 2>/dev/null          # relus à chaque session
+grep -h '^description:' .claude/agents/*.md .claude/skills/*/SKILL.md | wc -c  # chargés à chaque session
+echo '{"prompt_text":"ajoute un test"}' | bash .claude/hooks/regulator.sh | wc -c  # ajouté à chaque message
+```
+
+Puis, avec `token-monitor`, ce qui pèse vraiment dans les journaux : sessions très longues, sous-agents, jetons de sortie.
+
+## Les trois sources de gaspillage
+
+1. **Ce que Claude lit** (consignes, descriptions, fichiers relus) : étapes 2 et 3 ci-dessous.
+2. **Ce que l'utilisateur écrit** : conseille, sans rien imposer — préciser fichiers et résultat attendu dès le premier message (`/prompt-writer` sur un brouillon flou) ; coller l'extrait utile d'un journal, pas le journal entier ; une session par sujet (`/clear` entre deux tâches sans rapport, `/compact` quand une session s'allonge) ; ne pas renvoyer une demande déjà traitée (le régulateur la signale).
+3. **Ce que Claude écrit** : réponses et relais courts (règle 13 de `CLAUDE.md`), code minimal, pas de réécriture de ce qui fonctionne ; voir ponytail plus bas.
 
 ## Étape 2 — Techniques, de la plus sûre à la moins sûre
 
@@ -57,4 +73,4 @@ Ce n'est pas un compresseur de prompt : propose-le **en complément** quand le c
 
 Un tableau : fichier, taille avant, taille après, gain estimé, fréquence de chargement. Puis la correspondance des règles, et les passages que tu as volontairement **laissés longs** parce que les raccourcir les rendrait ambigus.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

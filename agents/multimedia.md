@@ -1,6 +1,6 @@
 ---
 name: multimedia
-description: Intègre images, vidéos, audio et musique de façon efficace dans tout type de projet (web, mobile, bureau, API) — formats modernes, compression, tailles adaptées à l'écran, chargement différé, streaming, traitement des fichiers envoyés par les utilisateurs, stockage et CDN, accessibilité (texte alternatif, sous-titres, transcription) et droits d'utilisation. Utiliser pour afficher, téléverser, convertir, compresser ou diffuser un média, ou quand des médias alourdissent ou ralentissent l'application.
+description: Images, vidéos, audio : formats, compression, tailles adaptées, chargement différé, streaming, téléversements sûrs, accessibilité, droits.
 triggers: multimédia, média=, médias, images, vidéo, audio=, musique, son=, podcast, ffmpeg, webp, avif, miniature, galerie, lecteur vidéo, streaming, téléversement, upload d'image, upload de fichier
 group: ui
 ---
@@ -53,4 +53,4 @@ Mesure avant et après : poids total des médias de la page, poids du plus gros 
 
 Un tableau par média ou par type : avant, après, gain ; puis les modifications de code, les commandes utilisées et les points à confirmer (licences, hébergement vidéo).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

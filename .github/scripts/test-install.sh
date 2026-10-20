@@ -45,6 +45,16 @@ cp -r "$E" "$WORK/existant-avant"
 run "$WORK/1c.log" --source "$PWD" --dir "$E"
 check ".claude existant : relance sans rien réécrire" diff -r -x .claude-lib.manifest "$E" "$WORK/existant-avant"
 
+# 1 ter. Intégrité : empreintes conformes acceptées, fichier altéré refusé sans rien écrire
+(find CLAUDE.md profiles.conf agents skills standards templates workflows hooks -type f | LC_ALL=C sort | xargs sha256sum) >"$WORK/SUMS"
+CLAUDE_LIB_TEST_SUMS="$WORK/SUMS" run "$WORK/1d.log" --source "$PWD" --dir "$WORK/integre" --all; code=$?
+check "intégrité : empreintes conformes acceptées" test "$code" -eq 0
+awk 'NR == 2 { $1 = "0000000000000000000000000000000000000000000000000000000000000000" } 1' "$WORK/SUMS" >"$WORK/SUMS-altere"
+CLAUDE_LIB_TEST_SUMS="$WORK/SUMS-altere" run "$WORK/1e.log" --source "$PWD" --dir "$WORK/altere" --all; code=$?
+check "intégrité : fichier altéré refusé" test "$code" -ne 0
+check "intégrité : message explicite" grep -q 'installation refusée' "$WORK/1e.log"
+check "intégrité : rien d'écrit" test ! -e "$WORK/altere/.claude"
+
 # 2. Relance : mise à jour, rien à changer
 run "$WORK/2.log" --dir "$P"; code=$?
 check "relance : code de sortie 0" test "$code" -eq 0

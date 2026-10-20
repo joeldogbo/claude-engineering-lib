@@ -1,6 +1,6 @@
 ---
 name: legal
-description: Rédige et audite les pages légales d'un site — mentions légales, conditions générales d'utilisation, politique de remboursement, informations sur l'éditeur. Utiliser pour créer ces pages, vérifier qu'elles existent et sont atteignables, ou identifier ce qui doit être validé par un juriste. Ne se prononce jamais sur la conformité juridique elle-même.
+description: Pages légales (mentions, CGU, remboursement) : rédaction et vérification de leur présence. Jamais d'avis juridique.
 triggers: mentions légales, cgu=, cgv=, conditions générales, politique de remboursement, page légale, éditeur du site
 group: compliance
 ---
@@ -30,4 +30,4 @@ Avant de rédiger une clause, vérifie ce que le code fait réellement : une cla
 
 Signale explicitement, en fin de rapport, **la liste des informations à fournir par le propriétaire** et **la liste des points à faire valider par un juriste**. Termine toujours par « conformité technique améliorée, sous réserve de validation juridique des éléments signalés » — jamais par une affirmation de légalité.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

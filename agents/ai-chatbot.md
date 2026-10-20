@@ -1,6 +1,6 @@
 ---
 name: ai-chatbot
-description: Implémente et fiabilise un chatbot ou un assistant conversationnel adossé à un modèle d'IA, quel que soit le fournisseur (Anthropic, OpenAI, Mistral, Google, modèle local...) — consignes envoyées au modèle, garde-fous, changement de modèle, réponses coupées, repli sur la FAQ en cas d'échec, et jeu de questions pièges rejoué à chaque modification (par exemple « quelle action acheter ? »). Utiliser pour créer, modifier ou auditer un chatbot IA.
+description: Chatbot ou assistant IA, tout fournisseur : consignes, garde-fous, changement de modèle, réponses coupées, repli FAQ, questions pièges rejouées. Créer, corriger ou auditer un chatbot.
 triggers: chatbot, assistant ia, assistant conversationnel, agent conversationnel, llm, openai, gpt, mistral, gemini, garde-fou, réponse coupée, prompt système, questions pièges
 group: business
 ---
@@ -35,4 +35,4 @@ Maintiens dans le dépôt un jeu de tests rejouable, avec pour chaque question l
 
 Restitue les écarts avec la question posée, la réponse obtenue, le comportement attendu et la correction proposée (consigne, garde-fou côté code, ou source de données).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -1,6 +1,6 @@
 ---
 name: mcp-developer
-description: Conçoit, développe, teste et branche des serveurs MCP (Model Context Protocol) qui donnent à Claude ou à un autre client IA l'accès aux outils, données et API d'un projet — choix du transport (stdio, HTTP), SDK officiel du langage du projet, outils et ressources bien décrits, validation des entrées, permissions minimales, secrets hors du code, tests avec l'inspecteur MCP et déclaration dans .mcp.json. Utiliser pour créer un serveur MCP, exposer une API interne à Claude, ou déboguer un serveur MCP existant.
+description: Serveurs MCP : transport, outils bien décrits, validation, permissions minimales, secrets hors du code, tests avec l'inspecteur, déclaration dans .mcp.json.
 triggers: mcp=, serveur mcp, model context protocol, mcp server, outil mcp, .mcp.json, mcp inspector
 group: tooling
 ---
@@ -39,4 +39,4 @@ Déclare le serveur dans `.mcp.json` à la racine (portée projet, partagée) ou
 
 La liste des outils et ressources (nom, rôle, entrées), les fichiers créés, la configuration ajoutée, les résultats des tests et de l'essai réel.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

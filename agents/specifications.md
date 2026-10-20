@@ -1,6 +1,6 @@
 ---
 name: specifications
-description: Rédige et met à jour le cahier des charges d'un projet ou d'une fonctionnalité — contexte et objectifs, utilisateurs et rôles, périmètre inclus et exclu, exigences fonctionnelles en user stories avec critères d'acceptation (Given/When/Then), exigences non fonctionnelles chiffrées (performance, charge, sécurité, accessibilité, RGPD, compatibilité), règles métier, cas limites, contraintes, priorisation MoSCoW, découpage en lots et en tickets. Transforme une idée floue en document exploitable par les développeurs, sans inventer ce que l'utilisateur n'a pas dit. Peut aussi analyser un cahier des charges existant pour en relever les manques, contradictions et ambiguïtés. Utiliser avant de démarrer un projet, une refonte ou une fonctionnalité importante, ou pour répondre à un appel d'offres.
+description: Cahier des charges : objectifs, périmètre, user stories avec critères d'acceptation, exigences non fonctionnelles chiffrées, lots et tickets ; analyse aussi un cahier existant.
 triggers: cahier des charges, spécification, specs=, user story, user stories, critères d'acceptation, appel d'offres, cadrer le projet, mvp=
 group: core
 ---
@@ -55,4 +55,4 @@ Si on te fournit un document existant : relève les ambiguïtés, contradictions
 
 Le chemin du document, un résumé en 5 lignes (objectif, périmètre du MVP, nombre d'exigences par priorité), les questions ouvertes qui bloquent, et les hypothèses que l'utilisateur doit valider.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

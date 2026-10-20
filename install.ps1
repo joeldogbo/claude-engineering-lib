@@ -392,6 +392,7 @@ $__claudeLibInstall = @{ Failed = $false }
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    $sumsFile = $null; $integrityNote = $null
     # Chemin absolu : les appels .NET ([IO.File]) ne suivent pas le dossier courant de PowerShell.
     $TargetDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TargetDir)
     $ClaudeDir = Join-Path $TargetDir '.claude'
@@ -473,8 +474,19 @@ $__claudeLibInstall = @{ Failed = $false }
                 throw "Archive incompl${eg}te : CLAUDE.md ou agents/ manquant."
             }
             Write-TaskEnd 'DONE'
+            # Empreintes publiees avec la release : un fichier altere (miroir, proxy, tag deplace) est refuse.
+            if ($Version -and $Version -ne 'main') {
+                Write-TaskStart "Int${e}grit${e}" "(SHA256SUMS)"
+                $sumsPath = Join-Path $tmpDir 'SHA256SUMS'
+                try { Invoke-Download "https://github.com/$Repo/releases/download/$Version/SHA256SUMS" $sumsPath; $sumsFile = $sumsPath; Write-TaskEnd 'DONE' }
+                catch { Write-TaskEnd 'SKIP'; $integrityNote = "Release sans empreintes publi${e}es (SHA256SUMS) : int${e}grit${e} non v${e}rifi${e}e." }
+            } else {
+                $integrityNote = "Branche main : pas d'empreintes publi${e}es, int${e}grit${e} non v${e}rifi${e}e. Pr${e}f${eg}re une release (-Version vX.Y.Z)."
+            }
             Write-Host ""
         }
+        # Reserve aux tests : fichier d'empreintes local, a la place de celui de la release.
+        if ($env:CLAUDE_LIB_TEST_SUMS) { $sumsFile = $env:CLAUDE_LIB_TEST_SUMS; $integrityNote = $null }
         if ($existing) {
             $from = if ($legacy) { "Installation existante sans manifeste (version ant${e}rieure)" } else { "Installation existante : $(if ($old.version) { $old.version } else { '?' })" }
             Write-Host ("  " + (Paint " UPDATE " $BadgeWarn) + " $from $Arrow $newVersion")
@@ -581,6 +593,15 @@ $__claudeLibInstall = @{ Failed = $false }
         $files.Add('CLAUDE.md')
         $srcHash = Get-Hashes $srcRoot $files
         if ($srcHash.Count -ne $files.Count) { throw "Fichiers de la biblioth${eg}que illisibles dans la source (archive incompl${eg}te ?)." }
+        # Integrite : chaque fichier a installer doit avoir l'empreinte publiee avec la release.
+        if ($sumsFile) {
+            $published = @{}
+            foreach ($line in [IO.File]::ReadAllLines($sumsFile, $Utf8)) {
+                if ($line -match '^([0-9a-fA-F]{64}) +\*?(?:\./)?(.+?)\s*$') { $published[$Matches[2]] = $Matches[1].ToLowerInvariant() }
+            }
+            $altered = @($files | Where-Object { $published[$_] -ne $srcHash[$_] })
+            if ($altered.Count) { throw "Int${e}grit${e} : fichier(s) diff${e}rent(s) de la release publi${e}e, installation refus${e}e : $($altered -join ', ')." }
+        }
         $dstHash = Get-Hashes $ClaudeDir (@($files) + @($manifestHashes.Keys))
 
         #   add      absent chez toi                       -> copie
@@ -844,6 +865,7 @@ $__claudeLibInstall = @{ Failed = $false }
         if (Test-Path $Txn.BackupDir) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " Anciennes versions sauvegard${e}es dans " + (Paint ".claude/backups/$(Split-Path $Txn.BackupDir -Leaf)" '1') + ".")
         }
+        if ($integrityNote) { Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " $integrityNote") }
         if ($hookMerge) {
             Write-Host ("  " + (Paint " INFO " $BadgeWarn) + " .claude/settings.json illisible, laiss${e} intact : le hook du r${e}gulateur est dans " + (Paint '.claude/settings.regulator.json' '1') + ", ${ag} fusionner.")
         }

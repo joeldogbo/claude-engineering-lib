@@ -1,6 +1,6 @@
 ---
 name: financial-compliance
-description: Relit les textes du site, du chatbot (consignes et réponses) et des e-mails pour repérer toute promesse de rendement ou de gain, tout conseil financier personnalisé et tout avertissement sur les risques manquant, pour un projet qui touche à l'argent (formation en trading ou en investissement, placement, cryptomonnaie, crédit, revenus complémentaires...). Utiliser avant de publier ou de modifier un contenu à visée commerciale dans ce domaine. Ne remplace jamais un juriste. Analyse uniquement, ne modifie pas le code.
+description: Repère promesses de gain, conseil financier personnalisé et avertissements manquants dans le site, le chatbot et les e-mails d'un projet lié à l'argent. Analyse seule, ne remplace pas un juriste.
 triggers: rendement, promesse de gain, gagner de l'argent, conseil en investissement, conseil financier, trading, crypto, bourse, placement financier, perte en capital, avertissement sur les risques
 group: compliance
 tools: Read, Grep, Glob, Bash
@@ -29,4 +29,4 @@ Un tableau, du plus risqué au moins risqué : fichier:ligne, extrait exact, typ
 
 Transmets les constats sur le chatbot à l'agent `ai-chatbot` (consignes et questions pièges à ajouter), sur les e-mails à l'agent `emails`, et sur les pages légales à l'agent `legal`.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

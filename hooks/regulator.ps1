@@ -83,13 +83,24 @@ if ($Audit) {
     if ($badGroup.Count) { "Groupe absent de profiles.conf : $($badGroup -join ' ')" }
     if ($noProtocol.Count) { "Sans protocole commun (standards/agent-protocol.md) : $($noProtocol -join ' ')" }
     if ($badAfter.Count) { "N1 introuvable dans after: : $($badAfter -join ' ')" }
+    $noGuard = @(Get-ChildItem -Path $dir -Filter *.md | Where-Object { -not ([IO.File]::ReadAllText($_.FullName, $utf8)).Contains('garde-fou non négociable') } | ForEach-Object { $_.BaseName })
+    if ($noGuard.Count) { "Sans garde-fou (aucun code malveillant, aucune fraude) : $($noGuard -join ' ')" }
+    # Caractères invisibles (largeur nulle, inversion de sens, BOM) : servent à cacher des consignes.
+    $libRoot = Join-Path $dir '..'
+    $hidden = @(foreach ($sub in @($dir) + @('skills', 'standards', 'workflows', 'templates' | ForEach-Object { Join-Path $libRoot $_ })) {
+        if (-not (Test-Path $sub)) { continue }
+        Get-ChildItem -Path $sub -Filter *.md -Recurse -File | Where-Object {
+            [IO.File]::ReadAllText($_.FullName, (New-Object System.Text.UTF8Encoding $false)) -match '[​-‏‪-‮⁠-⁤⁦-⁩﻿]'
+        } | ForEach-Object { "$($_.Directory.Name)/$($_.Name)" }
+    })
+    if ($hidden.Count) { "Caractères invisibles (consignes cachées ?) : $($hidden -join ' ')" }
     $owners = @{}
     foreach ($agent in $registry) {
         foreach ($t in ($agent.Triggers | Select-Object -Skip 1)) { $owners[$t] = @($owners[$t]) + $agent.Name | Where-Object { $_ } }
     }
     $shared = @($owners.Keys | Where-Object { @($owners[$_]).Count -gt 1 } | Sort-Object)
     foreach ($t in $shared) { "Déclencheur partagé « $t » : $(@($owners[$t]) -join ' ')" }
-    $bad = $missing.Count + $noGroup.Count + $badGroup.Count + $noProtocol.Count + $badAfter.Count
+    $bad = $missing.Count + $noGroup.Count + $badGroup.Count + $noProtocol.Count + $badAfter.Count + $noGuard.Count + $hidden.Count
     if (-not $bad -and -not $shared.Count) { "Aucun problème." }
     exit ([int]($bad -gt 0))
 }
@@ -113,7 +124,7 @@ if (Test-Path $progressDir) {
         @([IO.File]::ReadAllLines($_.FullName, $utf8) | Where-Object { $_ -match '^statut:\s*en cours' }).Count
     } | ForEach-Object { ".claude/progress/$($_.Name)" })
     if ($pending.Count) {
-        "[Régulateur] Travail interrompu à reprendre : $($pending -join ', '). Lis ces fichiers et propose à l'utilisateur de reprendre à la première étape non cochée, sans refaire les étapes déjà faites."
+        "[Régulateur] Travail interrompu à reprendre (règle 10) : $($pending -join ', ')."
     }
 }
 
@@ -134,7 +145,7 @@ if (Test-Path (Split-Path $historyFile)) {
                 if ($common / ($words.Count + $old.Count - $common) -ge 0.75) { $same = $parts[0] }
             }
             if ($same) {
-                "[Régulateur] Demande très proche d'un message du $same : avant de refaire le travail, lance d'abord l'agent request-history (autorisé pour ce message) pour vérifier ce qui existe déjà, puis ne fais que ce qui manque."
+                "[Régulateur] Demande très proche d'un message du $same : lance d'abord request-history, puis ne fais que ce qui manque."
             }
             $keep = @($past | Select-Object -Last 199) + ((Get-Date -Format 'yyyy-MM-dd HH:mm') + "`t" + ($words -join ' '))
             [IO.File]::WriteAllText($historyFile, (($keep -join "`n") + "`n"), $utf8)
@@ -168,11 +179,12 @@ if (Test-Path (Split-Path $lastFile)) {
 # Agents propres au projet, sans `triggers:` (installés avant la bibliothèque) : impossibles à
 # filtrer, ils sont signalés à chaque message pour que Claude les choisisse d'après leur description.
 $projectAgents = @($registry | Where-Object { $_.Declared -eq 0 } | ForEach-Object { $_.Name })
-$projectNote = "Agents propres au projet, sans déclencheurs (non filtrés par le régulateur) : $($projectAgents -join ', '). Lance l'un d'eux seulement si sa description correspond clairement au message."
+# Sortie minimale, relue à chaque message : les règles d'usage sont dans CLAUDE.md (règles 1, 6, 9, 12).
+$projectNote = "[Régulateur] Agents du projet sans triggers (à lancer seulement si leur description correspond) : $($projectAgents -join ', ')."
 
 if (-not $selected.Count) {
-    if ($projectAgents.Count) { "[Régulateur] Aucun agent de la bibliothèque pour ce message. $projectNote Sinon, réponds directement, sans sous-agent." }
-    else { "[Régulateur] Aucun agent pour ce message : réponds directement, sans sous-agent." }
+    "[Régulateur] Aucun agent de la bibliothèque."
+    if ($projectAgents.Count) { $projectNote }
     exit 0
 }
 # Niveaux : chaque N2 déclare ses N1 (after:) ; on en déduit le N2 de chaque N1.
@@ -184,10 +196,5 @@ $list = ($selected | ForEach-Object {
     elseif ($n2.Count) { $item += " [N1 $([char]0x2192) $($n2 -join ', ')]" }
     $item
 }) -join ' ; '
-"[Régulateur] Agents retenus pour ce message : $list."
-"Lance uniquement ceux de cette liste qui sont réellement utiles après lecture du message, en parallèle s'ils sont indépendants. N'en ajoute un autre que s'il est indispensable, en le signalant « hors régulateur » avec la raison. Commence la description de chaque appel par le nom de l'agent (ex. « backend : endpoint »)."
-"Si un agent de cette liste n'est pas parmi tes types de sous-agents, la session a démarré avant l'installation des agents (ils ne sont chargés qu'au démarrage) : ne fais pas son travail toi-même en silence, dis d'abord à l'utilisateur de redémarrer la session Claude Code (ou de recharger la fenêtre VS Code)."
+"[Régulateur] Agents retenus : $list."
 if ($projectAgents.Count) { $projectNote }
-if ($list.Contains('[N1 ')) {
-    "Niveaux : un N1 analyse sans rien modifier, son N2 corrige à partir du rapport du N1. Jamais en parallèle : N1 d'abord, puis N2 seulement si le N1 a des constats, avec l'accord de l'utilisateur pour la sécurité et le déploiement."
-}

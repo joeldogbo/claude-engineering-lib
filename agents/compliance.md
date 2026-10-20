@@ -1,6 +1,6 @@
 ---
 name: compliance
-description: Coordonne un audit de conformité complet d'un site — pages légales, données personnelles, consentement aux traceurs, accessibilité, sécurité, ergonomie. Répartit le travail entre les agents spécialisés, arbitre les conflits d'écriture sur un même fichier et consolide le rapport final. Utiliser pour un audit de conformité d'ensemble plutôt qu'un axe isolé.
+description: Coordonne un audit de conformité complet d'un site (pages légales, données personnelles, consentement, accessibilité, sécurité) et consolide le rapport.
 triggers: conformité, mise en conformité, audit de conformité, compliance
 group: compliance
 ---
@@ -46,4 +46,4 @@ Présente les scores pour ce qu'ils sont — une mesure de couverture technique,
 
 Ne conclus **jamais** par « site conforme » ou « 100 % légal ». La seule formule de conclusion autorisée est : « conformité technique améliorée, sous réserve de validation juridique des éléments signalés ».
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

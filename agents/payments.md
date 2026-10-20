@@ -1,6 +1,6 @@
 ---
 name: payments
-description: Implémente et fiabilise tout le cycle de paiement, quel que soit le prestataire (Stripe, PayPal, CinetPay, GeniusPay, FedaPay, Paystack, Flutterwave, mobile money via agrégateur...) — webhooks signés, états des paiements, remboursements et annulations, renouvellements d'abonnement, réconciliation, et attribution effective de l'accès à chaque payeur. Utiliser pour intégrer un prestataire de paiement, corriger un paiement non pris en compte, ou vérifier qu'aucun payeur n'est privé de son accès.
+description: Cycle de paiement, tout prestataire : webhooks signés, états, remboursements, renouvellements, réconciliation, accès effectif de chaque payeur.
 triggers: paiement, payer, payé, achat, abonnement, remboursement, renouvellement, stripe, paypal, cinetpay, geniuspay, fedapay, paystack, flutterwave, mobile money, orange money, checkout, facturation
 group: business
 ---
@@ -37,4 +37,4 @@ Teste avec le mode sandbox du prestataire ou des notifications simulées : signa
 
 Restitue les écarts trouvés avec fichier:ligne, le scénario concret (« un payeur dont le webhook arrive deux fois reçoit deux accès ») et le correctif. Signale à l'agent `security` toute faille d'authentification de webhook, et à l'agent `emails` tout reçu incohérent avec le paiement enregistré.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

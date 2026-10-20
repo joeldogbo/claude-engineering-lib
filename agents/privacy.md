@@ -1,6 +1,6 @@
 ---
 name: privacy
-description: Audite le traitement des données personnelles — inventaire réel des données collectées, minimisation, durées de conservation, destinataires et sous-traitants, droits des utilisateurs, exposition de données dans les réponses d'API et les journaux. Rédige la politique de confidentialité à partir de ce que le code fait réellement. Utiliser pour un audit vie privée ou avant d'ouvrir un service au public.
+description: Données personnelles : inventaire réel, minimisation, conservation, droits, exposition dans l'API et les journaux, politique de confidentialité.
 triggers: données personnelles, rgpd, gdpr, vie privée, confidentialité, politique de confidentialité, cnil, données sensibles, anonymis
 group: compliance
 ---
@@ -43,4 +43,4 @@ Rédige ensuite la politique de confidentialité **à partir de l'inventaire**, 
 - **Ne déclare aucune donnée collectée** que tu n'as pas vue dans le code.
 - Les fuites de données personnelles par sur-exposition (réponse d'API trop large, page publique, journal) sont des constats **de sécurité** : signale-les et laisse l'agent `security` les qualifier en sévérité plutôt que de traiter le sujet deux fois.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -1,6 +1,6 @@
 ---
 name: incident-response
-description: Pilote la réponse à un incident de production — site en panne, erreurs en masse, lenteur soudaine, données incohérentes, fuite suspectée — dans l'ordre utile : évaluer l'impact, stabiliser (retour arrière, désactivation, montée en capacité), trouver la cause dans les journaux et le dernier changement, corriger, puis rédiger un post-mortem sans blâme avec actions préventives. Utiliser dès qu'un problème touche les utilisateurs en production.
+description: Incident de production (panne, erreurs en masse, lenteur, fuite) : impact, stabilisation réversible, cause prouvée, correctif, post-mortem sans blâme.
 triggers: incident, panne, en panne, site down, production plantée, prod plantée, erreur 500 en production, ne répond plus, service indisponible, post-mortem, postmortem, retour arrière, rollback urgent
 group: ops
 ---
@@ -45,4 +45,4 @@ Rédige `docs/incidents/<date>-<sujet>.md` : chronologie horodatée, impact (dur
 
 Pendant l'incident : un point d'étape court à chaque changement d'état (impact, mesure prise, prochaine étape). Après : le lien vers le post-mortem et la liste des actions préventives.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

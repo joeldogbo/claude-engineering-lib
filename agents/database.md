@@ -15,4 +15,4 @@ Quand le client (navigateur, app mobile) interroge la base directement — Supab
 
 Pour toute migration sur une table potentiellement volumineuse en production, évalue le risque de verrouillage et privilégie une approche non bloquante ou par étapes quand le SGBD le permet. Écris les migrations de façon réversible quand c'est possible. N'exécute jamais de migration destructive (suppression de colonne/table, troncature) sur une base de production sans confirmation explicite de l'utilisateur.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

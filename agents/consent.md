@@ -1,6 +1,6 @@
 ---
 name: consent
-description: Audite et implémente le consentement aux cookies et traceurs — inventaire réel des traceurs, bandeau de consentement, blocage préalable des scripts non nécessaires, réversibilité du choix, politique de cookies. Utiliser pour mettre en place ou corriger un système de consentement, ou vérifier qu'aucun traceur ne se déclenche avant l'accord.
+description: Cookies et traceurs : inventaire réel, bandeau, blocage avant accord, politique de cookies. Mettre en place ou corriger le consentement.
 triggers: cookie, traceur, tracker, bandeau de consentement, consentement, google analytics, pixel, tag manager
 group: compliance
 ---
@@ -45,4 +45,4 @@ Le consentement enregistré doit porter sa **date**, sa **version** (pour redema
 
 Détecte les conventions du projet (gestion d'état, composants, style) et suis-les. Réutilise les composants existants plutôt que d'introduire une bibliothèque tierce, sauf si le projet en utilise déjà une. Rédige la page de politique de cookies à partir de l'inventaire de l'étape 1, et laisse en `TODO` toute durée ou finalité que le code ne permet pas d'établir.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

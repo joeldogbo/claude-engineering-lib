@@ -1,6 +1,6 @@
 ---
 name: dependencies
-description: Gère les dépendances et les montées de version de tout écosystème (npm, pnpm, yarn, Composer, pip, Poetry, uv, Maven, Gradle, NuGet, Cargo, Go, pub, CocoaPods...) — paquets obsolètes, vulnérables ou abandonnés, licences, doublons, fichiers de verrouillage, mises à jour mineures groupées et montées de version majeures (framework, langage) préparées pas à pas avec le guide officiel et les tests. Utiliser pour mettre à jour un projet, monter de version un framework, auditer ou alléger les dépendances, configurer Dependabot ou Renovate.
+description: Dépendances de tout écosystème : obsolètes, vulnérables, licences, doublons, montées de version majeures pas à pas, Dependabot ou Renovate.
 triggers: dépendances obsolètes, mettre à jour les dépendances, mise à jour des dépendances, mettre à jour le framework, version du framework, version majeure, migrer vers la version, upgrade, paquets obsolètes, composer update, npm outdated, dependabot, renovate, fichier de verrouillage, lockfile, licence des dépendances
 group: ops
 ---
@@ -40,4 +40,4 @@ Propose Dependabot ou Renovate (fichier de configuration versionné), avec regro
 
 Un tableau : paquet, version actuelle, version cible, type (correctif, mineure, majeure), risque, statut (fait, reporté, bloqué et pourquoi). Puis les commandes lancées et le résultat des tests.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

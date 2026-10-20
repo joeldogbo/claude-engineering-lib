@@ -70,6 +70,25 @@ $r = Invoke-Install @('-Source', $root, '-TargetDir', $ex)
 $after = Get-ChildItem $ex -Recurse -File -Force -Exclude '.claude-lib.manifest' | ForEach-Object { "$($_.FullName) $((Get-FileHash $_.FullName).Hash)" }
 Check ".claude existant : relance sans rien reecrire" (-not (Compare-Object @($before) @($after)))
 
+# 1 ter. Integrite : empreintes conformes acceptees, fichier altere refuse sans rien ecrire
+$sums = Join-Path $work 'SUMS'
+$libFiles = @('CLAUDE.md', 'profiles.conf') + @(foreach ($d in 'agents', 'skills', 'standards', 'templates', 'workflows', 'hooks') {
+    Get-ChildItem (Join-Path $root $d) -Recurse -File -Force | ForEach-Object { $_.FullName.Substring($root.Length).TrimStart('\', '/').Replace('\', '/') }
+})
+$lines = foreach ($rel in $libFiles) { (Get-FileHash (Join-Path $root $rel) -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $rel }
+[IO.File]::WriteAllLines($sums, [string[]]$lines)
+$env:CLAUDE_LIB_TEST_SUMS = $sums
+$r = Invoke-Install @('-Source', $root, '-TargetDir', (Join-Path $work 'integre'), '-All')
+Check "integrite : empreintes conformes acceptees" ($r.Code -eq 0)
+$lines[1] = ('0' * 64) + $lines[1].Substring(64)
+[IO.File]::WriteAllLines("$sums-altere", [string[]]$lines)
+$env:CLAUDE_LIB_TEST_SUMS = "$sums-altere"
+$r = Invoke-Install @('-Source', $root, '-TargetDir', (Join-Path $work 'altere'), '-All')
+Remove-Item Env:CLAUDE_LIB_TEST_SUMS
+Check "integrite : fichier altere refuse" ($r.Code -ne 0)
+Check "integrite : message explicite" ($r.Out -match 'installation refus')
+Check "integrite : rien d'ecrit" (-not (Test-Path (Join-Path $work 'altere/.claude')))
+
 # 2. Relance : mise a jour, rien a changer
 $r = Invoke-Install @('-TargetDir', $p)
 Check "relance : code de sortie 0" ($r.Code -eq 0)

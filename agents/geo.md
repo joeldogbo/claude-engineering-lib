@@ -1,6 +1,6 @@
 ---
 name: geo
-description: Optimise la citabilité et la visibilité du contenu par les moteurs génératifs et assistants IA (ChatGPT, Perplexity, Google AI Overviews, Claude...) — structuration factuelle du contenu, données structurées, fichier llms.txt, accès des robots IA. Utiliser pour un audit GEO ou pour implémenter des améliorations de citabilité par les IA.
+description: Citabilité du contenu par les moteurs génératifs et assistants IA : structure factuelle, données structurées, llms.txt, accès des robots IA.
 triggers: geo=, llms txt, chatgpt, perplexity, ai overviews, moteur génératif, citabilit, visibilité dans les ia
 group: seo
 ---
@@ -13,4 +13,4 @@ Structure le contenu pour l'extraction : réponse directe et factuelle en tête 
 
 Ne traite pas ici le classement dans les résultats de recherche classiques (renvoie vers l'agent `seo`) ni l'accessibilité (renvoie vers l'agent `accessibility`) : concentre-toi sur la clarté factuelle et la structuration pour une synthèse par IA.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -30,7 +30,7 @@ CASES = {
 # prompt -> fragments attendus dans la sortie : chaîne N1 → N2 affichée au contrôleur
 LEVELS = {
     "audite la sécurité et corrige les failles XSS":
-        ["security (", "[N1 → security-fixer]", "security-fixer (", "[N2 de security]", "Niveaux :"],
+        ["security (", "[N1 → security-fixer]", "security-fixer (", "[N2 de security]"],
     "Ajoute un écran de profil avec un formulaire": ["[N2 de ux-ui, accessibility]"],
 }
 
@@ -79,7 +79,7 @@ for shell in shells:
     for prompt, fragments in LEVELS.items():
         out = run(shell, prompt)
         results.setdefault(prompt, {})[shell] = out
-        ok = all(f in out for f in fragments) and (("Niveaux :" in out) == ("Niveaux :" in fragments))
+        ok = all(f in out for f in fragments)
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] niveaux {prompt[:50]!r}" + ("" if ok else f" -> {out}"))
 
@@ -102,7 +102,7 @@ for shell in shells:
         none = run(shell, "Merci, c'est parfait", agents=agents)
         some = run(shell, "Ajoute un écran de profil avec un formulaire", agents=agents)
         ok = ("Aucun agent de la bibliothèque" in none and "maison" in none
-              and "frontend" in selected(some) and "Agents propres au projet" in some and "maison." in some)
+              and "frontend" in selected(some) and "Agents du projet sans triggers" in some and "maison." in some)
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] agents du projet sans déclencheurs signalés" + ("" if ok else f" -> {none} | {some}"))
 

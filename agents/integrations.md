@@ -1,6 +1,6 @@
 ---
 name: integrations
-description: Implémente et fiabilise les intégrations avec des API externes (plateforme de formation comme SchoolMaker, CRM, ERP, outil d'automatisation, service tiers quelconque) et les tâches planifiées (cron, planificateur du framework, file de tâches) — création et synchronisation de comptes, suivi de progression, retrait des accès à l'expiration, pièges propres à chaque API, chemins et commandes réellement exécutés en production. Utiliser pour brancher une API externe, corriger une synchronisation, ou vérifier qu'une tâche planifiée tourne vraiment.
+description: API externes (création de comptes, synchronisation, retrait des accès) et tâches planifiées réellement exécutées en production.
 triggers: api externe, intégration avec, synchronis, cron, tâche planifiée, planificateur, file de tâches, queue, worker, schoolmaker, crm=, erp=, zapier, n8n
 group: backend
 ---
@@ -31,4 +31,4 @@ Simule le service externe avec des réponses enregistrées couvrant succès, err
 
 Restitue les risques trouvés avec fichier:ligne et un scénario concret (« si l'API répond en 30 s, la tâche de 2 h chevauche la suivante et crée des comptes en double »). Coordonne avec l'agent `payments` pour l'attribution et le retrait des accès liés aux paiements, et avec l'agent `devops` pour la configuration de production.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

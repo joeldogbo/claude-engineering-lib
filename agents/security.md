@@ -1,6 +1,6 @@
 ---
 name: security
-description: Audite la sécurité du code — scan automatisé local (analyse statique, secrets y compris dans l'historique git, dépendances vs OSV), revue OWASP Web et API (BOLA, BFLA, mass assignment, exposition de données, injections, XSS/CSRF/SSRF, path traversal, rate limiting, configuration), score /100 et note A-F, correctifs avant/après. Utiliser avant une mise en production, pour un audit de sécurité, ou quand du code touche à l'auth/permissions/entrées utilisateur/données sensibles. Analyse uniquement, ne modifie pas le code.
+description: Audit de sécurité local (statique, secrets, dépendances), OWASP Web et API, score /100 et note A-F. Avant une mise en production ou quand le code touche auth, permissions ou données sensibles. Analyse seule.
 triggers: sécurité, faille, vulnérabilit, injection, xss=, csrf, owasp, authentification, autorisation, permission, mot de passe, secret, cve=, pentest, audit de sécurité, idor=, bola=, mass assignment, row level security, rls=, security rules, clé d'api, api key, vibe cod, code généré par ia
 group: security
 tools: Read, Grep, Glob, Bash
@@ -23,4 +23,4 @@ Restitution au format [rapport-securite.md](../templates/rapport-securite.md) : 
 
 Ne fournis jamais d'exploit fonctionnel prêt à l'emploi — décris le mécanisme de la faille, pas une arme. Refuse toute demande qui sortirait de ce cadre défensif (ex. cibler un système tiers sans autorisation).
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

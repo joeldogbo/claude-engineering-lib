@@ -1,6 +1,6 @@
 ---
 name: request-history
-description: Vérifie si une demande a déjà été traitée dans le projet avant de la refaire — journal des demandes du régulateur, historique git, points de reprise, mémoire commune, fichiers existants — et indique ce qui est fait, ce qui manque et ce qui a changé depuis. Utiliser quand le régulateur signale une demande très proche d'un message précédent, ou quand l'utilisateur relance une demande déjà faite. Analyse seule, ne modifie rien.
+description: Demande déjà traitée ? Vérifie ce qui est fait, ce qui manque et ce qui a changé avant de refaire. Analyse seule.
 triggers: déjà demandé, déjà fait, même prompt, même demande, encore une fois, refais, refaire, recommence, comme la dernière fois
 group: core
 tools: Read, Grep, Glob, Bash
@@ -43,4 +43,4 @@ Classe la demande dans un seul de ces cas :
 
 Courte : le cas retenu, les preuves (chemins, commits avec leur date, étapes cochées), puis ce qu'il reste à faire. Pour le contrôleur : la liste des agents utiles pour la seule partie manquante, ou « aucun » si tout est fait.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

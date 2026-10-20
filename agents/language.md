@@ -1,6 +1,6 @@
 ---
 name: language
-description: Détermine la langue de travail du projet (documentation, interface, messages de commit, commentaires) d'après le dépôt, l'inscrit dans `.claude/project-context.md` pour que tous les agents l'utilisent, repère les mélanges de langues et les textes non traduits, et met en place ou vérifie l'internationalisation (fichiers de traduction, clés manquantes, formats de date, de nombre et de devise). Utiliser au premier usage de la bibliothèque, quand les agents ne répondent pas dans la bonne langue, pour traduire ou rendre une application multilingue.
+description: Langue de travail du projet inscrite pour tous les agents, mélanges de langues, internationalisation et traduction.
 triggers: langue du projet, changer de langue, traduction, traduire, traduis, i18n=, l10n=, internationalisation, multilingue, localisation, en anglais, en français, translate, mélange de langues
 group: core
 tools: Read, Grep, Glob, Bash, Edit, Write
@@ -43,4 +43,4 @@ Si le dépôt ne permet pas de trancher (projet vide, moitié-moitié), propose 
 
 Ne renomme jamais les identifiants du code pour changer leur langue : c'est un refactoring à part, à proposer seulement.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

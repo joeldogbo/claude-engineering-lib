@@ -11,4 +11,4 @@ Utilise le skill `debugging-methodology`. Reproduis le bug de façon fiable et m
 
 Vérifie si le même défaut existe ailleurs dans le code par un pattern similaire. Corrige à la racine et ajoute un test qui aurait échoué avant le correctif (voir skill `test-strategy`). Si le bug touche à l'authentification, aux permissions ou à des données sensibles, signale-le explicitement pour un passage par le skill `security-audit`. Ne supprime ni ne désactive jamais un test existant pour faire disparaître un échec.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

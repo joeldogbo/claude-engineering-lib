@@ -12,4 +12,4 @@ Vérifie systématiquement : contraste texte/fond suffisant, navigation complèt
 
 Restitue les constats priorisés par sévérité (bloquant pour un usage complet au clavier/lecteur d'écran vs amélioration secondaire), avec référence précise au composant/écran concerné et la correction attendue.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

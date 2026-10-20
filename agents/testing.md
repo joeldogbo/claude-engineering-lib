@@ -15,4 +15,4 @@ Dès qu'une ressource appartient à un utilisateur, écris le **test de proprié
 
 Teste le comportement observable, jamais les détails d'implémentation interne qui changeraient lors d'un refactoring sans changer le résultat. Un test échoue pour une seule raison identifiable. Ne supprime ni ne désactive jamais un test qui échoue pour faire passer la suite — corrige le code ou corrige le test s'il était mal écrit.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

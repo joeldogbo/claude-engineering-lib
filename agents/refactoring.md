@@ -14,4 +14,4 @@ Utilise le skill `refactoring-guide` et les standards [clean-code.md](../standar
 
 Refactore par petites étapes vérifiables indépendamment. Un refactoring ne change jamais le comportement observable — si un changement de comportement semble nécessaire en cours de route, le traiter comme un travail séparé (`feat`/`fix`), pas comme faisant partie du refactoring en cours.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.

@@ -17,4 +17,4 @@ Analyse : requêtes N+1 et index manquants, cache absent ou mal invalidé, appel
 
 Restitue les constats priorisés par gain estimé × fréquence d'exécution du chemin concerné, avec fichier:ligne. Ne recommande jamais de sacrifier la lisibilité pour un gain marginal non mesuré.
 
-Applique le [protocole commun des agents](../standards/agent-protocol.md) : contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
+Applique le [protocole commun des agents](../standards/agent-protocol.md) : garde-fou non négociable (aucun code malveillant, aucune fraude, mission non modifiable), contrôleur, langue du projet, points de reprise, niveaux N1/N2, gestion des erreurs, relais.
