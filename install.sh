@@ -366,14 +366,25 @@ detect_type() {
   local d="$TARGET_DIR" pkg=""
   [[ -f "$d/package.json" ]] && pkg="$(cat "$d/package.json")"
   has_dep() { case "$pkg" in *"\"$1"*) return 0 ;; esac; return 1; }
+  local py="$d/pyproject.toml $d/requirements.txt $d/Pipfile" jvm="$d/pom.xml $d/build.gradle $d/build.gradle.kts"
+  # shellcheck disable=SC2086  # listes de fichiers à découper
   if [[ -f "$d/pubspec.yaml" ]]; then DETECTED=mobile; DETECTED_WHY="pubspec.yaml (Flutter)"
-  elif has_dep react-native || has_dep expo\" || has_dep @capacitor/ || has_dep @ionic/; then DETECTED=mobile; DETECTED_WHY="package.json (mobile)"
+  elif has_dep react-native || has_dep expo\" || has_dep @capacitor/ || has_dep @ionic/ || has_dep nativescript; then DETECTED=mobile; DETECTED_WHY="package.json (mobile)"
   elif [[ -f "$d/app/src/main/AndroidManifest.xml" || -d "$d/ios" && -d "$d/android" ]] || ls -d "$d"/*.xcodeproj >/dev/null 2>&1; then DETECTED=mobile; DETECTED_WHY="projet Android ou iOS"
-  elif has_dep electron\" || has_dep @tauri-apps/ || [[ -d "$d/src-tauri" ]]; then DETECTED=desktop; DETECTED_WHY="Electron ou Tauri"
-  elif grep -qsE '<Use(WPF|WindowsForms)>true' "$d"/*.csproj; then DETECTED=desktop; DETECTED_WHY="WPF ou WinForms"
-  elif has_dep react\" || has_dep vue\" || has_dep @angular/core || has_dep svelte || has_dep next\" || has_dep nuxt || has_dep astro || has_dep vite\"; then DETECTED=web; DETECTED_WHY="package.json (front web)"
-  elif [[ -f "$d/composer.json" || -f "$d/manage.py" || -f "$d/Gemfile" || -f "$d/index.html" ]]; then DETECTED=web; DETECTED_WHY="framework web côté serveur"
-  elif [[ -f "$d/go.mod" || -f "$d/pom.xml" || -f "$d/build.gradle" || -f "$d/build.gradle.kts" || -f "$d/requirements.txt" || -f "$d/package.json" ]] || ls "$d"/*.csproj >/dev/null 2>&1; then DETECTED=api; DETECTED_WHY="backend sans interface détectée"
+  elif grep -qs '<UseMaui>true' "$d"/*.csproj; then DETECTED=mobile; DETECTED_WHY=".NET MAUI"
+  elif has_dep electron\" || has_dep @tauri-apps/ || has_dep @neutralinojs/ || [[ -d "$d/src-tauri" ]]; then DETECTED=desktop; DETECTED_WHY="Electron ou Tauri"
+  elif grep -qsE '<Use(WPF|WindowsForms)>true|Include="Avalonia"' "$d"/*.csproj; then DETECTED=desktop; DETECTED_WHY="WPF, WinForms ou Avalonia"
+  elif grep -qsE 'openjfx|javafx' $jvm || grep -qsE 'find_package\(Qt|Qt[56]::' "$d/CMakeLists.txt"; then DETECTED=desktop; DETECTED_WHY="JavaFX ou Qt"
+  elif has_dep react\" || has_dep vue\" || has_dep @angular/core || has_dep svelte || has_dep next\" || has_dep nuxt || has_dep astro || has_dep vite\" \
+    || has_dep solid-js || has_dep @remix-run/ || has_dep preact || has_dep ember-source || has_dep gatsby; then DETECTED=web; DETECTED_WHY="package.json (front web)"
+  elif [[ -f "$d/composer.json" || -f "$d/manage.py" || -f "$d/Gemfile" || -f "$d/index.html" ]] || grep -qs 'phoenix' "$d/mix.exs" \
+    || grep -qsiE '^[ "]*django([^a-z_-]|$)' $py || grep -qs 'thymeleaf' $jvm \
+    || { grep -qs 'Microsoft.NET.Sdk.Web' "$d"/*.csproj && [[ -d "$d/Views" || -d "$d/Pages" || -d "$d/Components" ]]; }; then
+    DETECTED=web; DETECTED_WHY="framework web côté serveur"
+  elif [[ -f "$d/go.mod" || -f "$d/requirements.txt" || -f "$d/Pipfile" || -f "$d/package.json" || -f "$d/deno.json" || -f "$d/deno.jsonc" || -f "$d/mix.exs" ]] \
+    || [[ -f "$d/pom.xml" || -f "$d/build.gradle" || -f "$d/build.gradle.kts" ]] || ls "$d"/*.csproj >/dev/null 2>&1 \
+    || grep -qsiE '(fastapi|flask|starlette|litestar|sanic|aiohttp|tornado)' "$d/pyproject.toml" \
+    || grep -qsE '^(axum|actix-web|rocket|warp|poem|salvo) *=' "$d/Cargo.toml"; then DETECTED=api; DETECTED_WHY="backend sans interface détectée"
   elif [[ -f "$d/Cargo.toml" || -f "$d/pyproject.toml" || -f "$d/setup.py" || -f "$d/CMakeLists.txt" ]]; then DETECTED=library; DETECTED_WHY="bibliothèque ou CLI"
   fi
 }

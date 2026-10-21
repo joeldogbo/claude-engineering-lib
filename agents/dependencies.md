@@ -1,7 +1,7 @@
 ---
 name: dependencies
 description: Dépendances de tout écosystème : obsolètes, vulnérables, licences, doublons, montées de version majeures pas à pas, Dependabot ou Renovate.
-triggers: dépendances obsolètes, mettre à jour les dépendances, mise à jour des dépendances, mettre à jour le framework, version du framework, version majeure, migrer vers la version, upgrade, paquets obsolètes, composer update, npm outdated, dependabot, renovate, fichier de verrouillage, lockfile, licence des dépendances
+triggers: dépendances obsolètes, mettre à jour les dépendances, mise à jour des dépendances, mettre à jour le framework, version du framework, version majeure, migrer vers la version, vers la version, monter de version, monte de version, dernière version, upgrade, paquets obsolètes, composer update, npm outdated, dependabot, renovate, fichier de verrouillage, lockfile, licence des dépendances
 group: ops
 ---
 

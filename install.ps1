@@ -230,17 +230,32 @@ $__claudeLibInstall = @{ Failed = $false }
         $hasDep = { param([string[]]$Names) @($Names | Where-Object { $pkg.Contains('"' + $_) }).Count -gt 0 }
         $csproj = @(Get-ChildItem -Path $Dir -Filter *.csproj -ErrorAction SilentlyContinue)
         $inDir = { param([string[]]$Names) @($Names | Where-Object { Test-Path (Join-Path $Dir $_) }).Count -gt 0 }
+        # Contenu concatene de fichiers presents (vide sinon), pour chercher une dependance.
+        $text = { param([string[]]$Names) (@($Names | ForEach-Object { Join-Path $Dir $_ } | Where-Object { Test-Path $_ -PathType Leaf } | ForEach-Object { [IO.File]::ReadAllText($_) }) -join "`n") }
+        $csText = (@($csproj | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join "`n")
+        $py = & $text @('pyproject.toml', 'requirements.txt', 'Pipfile')
+        $jvm = & $text @('pom.xml', 'build.gradle', 'build.gradle.kts')
         if (& $inDir @('pubspec.yaml')) { return @('mobile', 'pubspec.yaml (Flutter)') }
-        if (& $hasDep @('react-native', 'expo"', '@capacitor/', '@ionic/')) { return @('mobile', 'package.json (mobile)') }
+        if (& $hasDep @('react-native', 'expo"', '@capacitor/', '@ionic/', 'nativescript')) { return @('mobile', 'package.json (mobile)') }
         if ((& $inDir @('app/src/main/AndroidManifest.xml')) -or ((& $inDir @('ios')) -and (& $inDir @('android'))) -or
             @(Get-ChildItem -Path $Dir -Filter *.xcodeproj -Directory -ErrorAction SilentlyContinue).Count) {
             return @('mobile', 'projet Android ou iOS')
         }
-        if ((& $hasDep @('electron"', '@tauri-apps/')) -or (& $inDir @('src-tauri'))) { return @('desktop', 'Electron ou Tauri') }
-        if (@($csproj | Where-Object { [IO.File]::ReadAllText($_.FullName) -match '<Use(WPF|WindowsForms)>true' }).Count) { return @('desktop', 'WPF ou WinForms') }
-        if (& $hasDep @('react"', 'vue"', '@angular/core', 'svelte', 'next"', 'nuxt', 'astro', 'vite"')) { return @('web', 'package.json (front web)') }
-        if (& $inDir @('composer.json', 'manage.py', 'Gemfile', 'index.html')) { return @('web', "framework web c${o}t${e} serveur") }
-        if ((& $inDir @('go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'requirements.txt', 'package.json')) -or $csproj.Count) {
+        if ($csText -match '<UseMaui>true') { return @('mobile', '.NET MAUI') }
+        if ((& $hasDep @('electron"', '@tauri-apps/', '@neutralinojs/')) -or (& $inDir @('src-tauri'))) { return @('desktop', 'Electron ou Tauri') }
+        if ($csText -match '<Use(WPF|WindowsForms)>true|Include="Avalonia"') { return @('desktop', 'WPF, WinForms ou Avalonia') }
+        if ($jvm -match 'openjfx|javafx' -or (& $text @('CMakeLists.txt')) -match 'find_package\(Qt|Qt[56]::') { return @('desktop', 'JavaFX ou Qt') }
+        if (& $hasDep @('react"', 'vue"', '@angular/core', 'svelte', 'next"', 'nuxt', 'astro', 'vite"', 'solid-js', '@remix-run/', 'preact', 'ember-source', 'gatsby')) {
+            return @('web', 'package.json (front web)')
+        }
+        if ((& $inDir @('composer.json', 'manage.py', 'Gemfile', 'index.html')) -or (& $text @('mix.exs')) -match 'phoenix' -or
+            $py -match '(?im)^[ "]*django([^a-z_-]|$)' -or $jvm -match 'thymeleaf' -or
+            ($csText -match 'Microsoft\.NET\.Sdk\.Web' -and (& $inDir @('Views', 'Pages', 'Components')))) {
+            return @('web', "framework web c${o}t${e} serveur")
+        }
+        if ((& $inDir @('go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'requirements.txt', 'Pipfile', 'package.json', 'deno.json', 'deno.jsonc', 'mix.exs')) -or $csproj.Count -or
+            (& $text @('pyproject.toml')) -match '(?i)(fastapi|flask|starlette|litestar|sanic|aiohttp|tornado)' -or
+            (& $text @('Cargo.toml')) -match '(?m)^(axum|actix-web|rocket|warp|poem|salvo) *=') {
             return @('api', "backend sans interface d${e}tect${e}e")
         }
         if (& $inDir @('Cargo.toml', 'pyproject.toml', 'setup.py', 'CMakeLists.txt')) { return @('library', "biblioth${eg}que ou CLI") }
