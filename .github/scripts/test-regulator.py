@@ -35,6 +35,20 @@ LEVELS = {
 }
 
 
+def command(shell, *args):
+    # Chemin complet via le PATH : sous Windows, un nom nu trouverait le bash de WSL (System32) avant Git Bash.
+    if shell == "bash":
+        return [shutil.which("bash") or "bash", (ROOT / "hooks" / "regulator.sh").as_posix(), *args]
+    return [shutil.which(shell) or shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "hooks" / "regulator.ps1"), *args]
+
+
+def raw_run(shell, prompt, **env):
+    payload = json.dumps({"prompt_text": prompt}, ensure_ascii=False).encode("utf-8")
+    out = subprocess.run(command(shell), input=payload, capture_output=True, timeout=60,
+                         env=dict(os.environ, REGULATOR_AGENTS_DIR=AGENTS, REGULATOR_HISTORY_FILE=str(ROOT / "absent" / "p.log"), **env))
+    return out.returncode, out.stdout.decode("utf-8", "replace"), out.stderr.decode("utf-8", "replace")
+
+
 def run(shell, prompt, progress=None, history=None, agents=AGENTS):
     payload = json.dumps({"prompt_text": prompt, "hook_event_name": "UserPromptSubmit",
                           "cwd": "/tmp/agent-ia-chatbot-paiement"},  # le cwd ne doit jamais compter
@@ -72,7 +86,8 @@ for shell in shells:
             ok = "Aucun agent" in out
         else:
             must, must_not = expected
-            ok = must <= got and not (must_not & got) and len(got) <= 4
+            # Relu à chaque message : une ligne, courte (les règles d'usage sont dans CLAUDE.md).
+            ok = must <= got and not (must_not & got) and len(got) <= 4 and len(out.splitlines()) == 1 and len(out) <= 300
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] {prompt[:60]!r} -> {sorted(got) or out[:60]}")
 
@@ -106,6 +121,14 @@ for shell in shells:
         fails += not ok
         print(f"{'ok  ' if ok else 'FAIL'} [{shell}] agents du projet sans déclencheurs signalés" + ("" if ok else f" -> {none} | {some}"))
 
+    # Collage énorme : bloqué (code 2, raison sur stderr) avant le modèle ; « [long] » ou plafond à 0 le laissent passer.
+    huge = "erreur dans le journal " * 1000
+    code, _, err = raw_run(shell, huge)
+    passed = [raw_run(shell, "[long] " + huge)[0], raw_run(shell, huge, REGULATOR_MAX_PROMPT="0")[0], raw_run(shell, "corrige le bug")[0]]
+    ok = code == 2 and "bloqué" in err and passed == [0, 0, 0]
+    fails += not ok
+    print(f"{'ok  ' if ok else 'FAIL'} [{shell}] collage énorme bloqué avant le modèle" + ("" if ok else f" -> {code} {err!r} {passed}"))
+
     # Demande répétée : signalée au second envoi d'un message reformulé, jamais pour un message différent ou court.
     with tempfile.TemporaryDirectory() as hooks:
         history = str(pathlib.Path(hooks, "prompts.log"))
@@ -136,5 +159,18 @@ for shell in shells:
     fails += not ok
     print(f"{'ok  ' if ok else 'FAIL'} [{shell}] audit des règles communes des agents"
           + ("" if ok else ":\n" + audit.stdout.decode("utf-8", "replace")))
+
+    # Plafonds de ce qui est relu à chaque session : une description trop longue bloque l'audit.
+    with tempfile.TemporaryDirectory() as lib:
+        shutil.copytree(AGENTS, pathlib.Path(lib, "agents"))
+        shutil.copy(ROOT / "CLAUDE.md", lib)
+        git = pathlib.Path(lib, "agents", "git.md")
+        text = git.read_text(encoding="utf-8")
+        git.write_text(text.replace("description: ", "description: " + "très long " * 40, 1), encoding="utf-8")
+        audit = subprocess.run(cmd, capture_output=True, env=dict(os.environ, REGULATOR_AGENTS_DIR=str(pathlib.Path(lib, "agents"))))
+        out = audit.stdout.decode("utf-8", "replace")
+        ok = audit.returncode == 1 and "Trop long" in out and "git (" in out
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] audit : plafond des descriptions" + ("" if ok else ":\n" + out))
 print(f"\n{fails} échec(s)." if fails else "\nTous les contrôles sont passés.")
 sys.exit(1 if fails else 0)

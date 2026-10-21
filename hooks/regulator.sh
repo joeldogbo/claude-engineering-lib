@@ -87,7 +87,16 @@ if [[ "${1:-}" == "--audit" ]]; then
   # Caractères invisibles (largeur nulle, inversion de sens, BOM) : servent à cacher des consignes.
   HIDDEN="$(find "$DIR" "$DIR/../skills" "$DIR/../standards" "$DIR/../workflows" "$DIR/../templates" -name '*.md' \
     -exec grep -lE $'\xe2\x80[\x8b-\x8f\xaa-\xae]|\xe2\x81[\xa0-\xa4\xa6-\xa9]|\xef\xbb\xbf' {} + 2>/dev/null | sed 's#^.*/\.\./##; s#^.*/agents/#agents/#' | tr '\n' ' ')"
-  registry | awk -F'\t' -v known="$GROUPS_KNOWN" -v noproto="$NO_PROTOCOL" -v noguard="$NO_GUARD" -v hidden="$HIDDEN" '
+  # Plafonds de ce qui est relu à chaque session : au-delà, compresser avec prompt-compressor avant de publier.
+  BUDGET=""
+  LIB_MD="$DIR/../claude-lib.md"; [[ -f "$LIB_MD" ]] || LIB_MD="$DIR/../CLAUDE.md"
+  if [[ -f "$LIB_MD" ]] && (( $(wc -c <"$LIB_MD") > 8192 )); then BUDGET="${LIB_MD##*/} ($(wc -c <"$LIB_MD" | tr -d ' ') octets > 8192)"; fi
+  # Longueur en caractères : les octets de continuation UTF-8 ne comptent pas.
+  LONG_DESC="$(awk 'FNR == 1 { f = FILENAME; sub(/^.*\//, "", f); sub(/\.md$/, "", f) }
+    /^description:/ && FNR < 30 { d = $0; sub(/^description:[ \t]*/, "", d); sub(/\r$/, "", d); gsub(/[\200-\277]/, "", d)
+                                   if (length(d) > 300) printf "%s%s (%d)", (n++ ? ", " : ""), f, length(d) }' "$DIR"/*.md)"
+  if [[ -n "$LONG_DESC" ]]; then BUDGET="$BUDGET${BUDGET:+ ; }description > 300 caractères : $LONG_DESC"; fi
+  registry | awk -F'\t' -v known="$GROUPS_KNOWN" -v noproto="$NO_PROTOCOL" -v noguard="$NO_GUARD" -v hidden="$HIDDEN" -v budget="$BUDGET" '
     { agents++; names[$1] = 1
       if ($3 == 0) missing = missing " " $1
       if ($6 == "") nogroup = nogroup " " $1
@@ -105,8 +114,9 @@ if [[ "${1:-}" == "--audit" ]]; then
       if (badafter != "") printf "N1 introuvable dans after: :%s\n", badafter
       if (noguard != "") printf "Sans garde-fou (aucun code malveillant, aucune fraude) : %s\n", noguard
       if (hidden != "") printf "Caractères invisibles (consignes cachées ?) : %s\n", hidden
+      if (budget != "") printf "Trop long, relu à chaque session (compresser avec prompt-compressor) : %s\n", budget
       for (k in count) if (count[k] > 1) { shared = 1; printf "Déclencheur partagé « %s » :%s\n", k, owners[k] }
-      bad = (missing != "" || nogroup != "" || badgroup != "" || noproto != "" || badafter != "" || noguard != "" || hidden != "")
+      bad = (missing != "" || nogroup != "" || badgroup != "" || noproto != "" || badafter != "" || noguard != "" || hidden != "" || budget != "")
       if (!bad && !shared) print "Aucun problème."
       exit bad
     }'
@@ -131,6 +141,14 @@ PROMPT="$(printf '%s' "$INPUT" | awk '
 
 # Une commande slash décide elle-même de ce qu'elle lance.
 case "$PROMPT" in /*|"") exit 0 ;; esac
+
+# Collage énorme (journal entier...) : bloqué avant d'atteindre le modèle, donc aucun jeton dépensé.
+# Le code 2 efface le message et affiche la raison à l'utilisateur. « [long] » en tête l'envoie tel quel.
+MAX_PROMPT="${REGULATOR_MAX_PROMPT:-20000}"
+if [[ "$MAX_PROMPT" -gt 0 && ${#PROMPT} -gt "$MAX_PROMPT" && "$PROMPT" != "[long]"* ]]; then
+  echo "[Régulateur] Message de ${#PROMPT} caractères bloqué avant envoi au modèle : aucun jeton dépensé. Colle seulement l'extrait utile (par exemple 30 lignes autour de l'erreur), ou commence le message par [long] pour l'envoyer tel quel. Plafond réglable : REGULATOR_MAX_PROMPT (0 = désactivé)." >&2
+  exit 2
+fi
 
 # Points de reprise laissés par un travail interrompu (coupure de connexion, session fermée).
 if [[ -d "$PROGRESS_DIR" ]]; then

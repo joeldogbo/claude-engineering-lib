@@ -94,13 +94,25 @@ if ($Audit) {
         } | ForEach-Object { "$($_.Directory.Name)/$($_.Name)" }
     })
     if ($hidden.Count) { "Caractères invisibles (consignes cachées ?) : $($hidden -join ' ')" }
+    # Plafonds de ce qui est relu à chaque session : au-delà, compresser avec prompt-compressor avant de publier.
+    $budget = @()
+    $libMd = Join-Path $libRoot 'claude-lib.md'
+    if (-not (Test-Path $libMd)) { $libMd = Join-Path $libRoot 'CLAUDE.md' }
+    if ((Test-Path $libMd) -and (Get-Item $libMd).Length -gt 8192) { $budget += "$(Split-Path $libMd -Leaf) ($((Get-Item $libMd).Length) octets > 8192)" }
+    $longDesc = @(Get-ChildItem -Path $dir -Filter *.md | ForEach-Object {
+        $line = @([IO.File]::ReadAllLines($_.FullName, $utf8) | Select-Object -First 30 | Where-Object { $_ -match '^description:' }) | Select-Object -First 1
+        $d = if ($line) { ($line -replace '^description:\s*', '').TrimEnd() } else { '' }
+        if ($d.Length -gt 300) { "$($_.BaseName) ($($d.Length))" }
+    })
+    if ($longDesc.Count) { $budget += "description > 300 caractères : $($longDesc -join ', ')" }
+    if ($budget.Count) { "Trop long, relu à chaque session (compresser avec prompt-compressor) : $($budget -join ' ; ')" }
     $owners = @{}
     foreach ($agent in $registry) {
         foreach ($t in ($agent.Triggers | Select-Object -Skip 1)) { $owners[$t] = @($owners[$t]) + $agent.Name | Where-Object { $_ } }
     }
     $shared = @($owners.Keys | Where-Object { @($owners[$_]).Count -gt 1 } | Sort-Object)
     foreach ($t in $shared) { "Déclencheur partagé « $t » : $(@($owners[$t]) -join ' ')" }
-    $bad = $missing.Count + $noGroup.Count + $badGroup.Count + $noProtocol.Count + $badAfter.Count + $noGuard.Count + $hidden.Count
+    $bad = $missing.Count + $noGroup.Count + $badGroup.Count + $noProtocol.Count + $badAfter.Count + $noGuard.Count + $hidden.Count + $budget.Count
     if (-not $bad -and -not $shared.Count) { "Aucun problème." }
     exit ([int]($bad -gt 0))
 }
@@ -117,6 +129,14 @@ try {
 $prompt = if ($hookInput.prompt_text) { [string]$hookInput.prompt_text } elseif ($hookInput.prompt) { [string]$hookInput.prompt } else { '' }
 # Une commande slash décide elle-même de ce qu'elle lance.
 if (-not $prompt -or $prompt.StartsWith('/')) { exit 0 }
+
+# Collage énorme (journal entier...) : bloqué avant d'atteindre le modèle, donc aucun jeton dépensé.
+# Le code 2 efface le message et affiche la raison à l'utilisateur. « [long] » en tête l'envoie tel quel.
+$maxPrompt = if ($env:REGULATOR_MAX_PROMPT) { [int]$env:REGULATOR_MAX_PROMPT } else { 20000 }
+if ($maxPrompt -gt 0 -and $prompt.Length -gt $maxPrompt -and -not $prompt.StartsWith('[long]')) {
+    [Console]::Error.WriteLine("[Régulateur] Message de $($prompt.Length) caractères bloqué avant envoi au modèle : aucun jeton dépensé. Colle seulement l'extrait utile (par exemple 30 lignes autour de l'erreur), ou commence le message par [long] pour l'envoyer tel quel. Plafond réglable : REGULATOR_MAX_PROMPT (0 = désactivé).")
+    exit 2
+}
 
 # Points de reprise laissés par un travail interrompu (coupure de connexion, session fermée).
 if (Test-Path $progressDir) {
