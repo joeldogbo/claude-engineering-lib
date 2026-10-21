@@ -33,6 +33,7 @@ $dir = if ($env:REGULATOR_AGENTS_DIR) { $env:REGULATOR_AGENTS_DIR } else { Join-
 $progressDir = if ($env:REGULATOR_PROGRESS_DIR) { $env:REGULATOR_PROGRESS_DIR } else { Join-Path $projectDir '.claude/progress' }
 $lastFile = if ($env:REGULATOR_LAST_FILE) { $env:REGULATOR_LAST_FILE } else { Join-Path $projectDir '.claude/hooks/regulator.last' }
 $historyFile = if ($env:REGULATOR_HISTORY_FILE) { $env:REGULATOR_HISTORY_FILE } else { Join-Path $projectDir '.claude/hooks/prompts.log' }
+$runningFile = if ($env:REGULATOR_RUNNING_FILE) { $env:REGULATOR_RUNNING_FILE } else { Join-Path $projectDir '.claude/hooks/agents.running' }
 $max = if ($env:REGULATOR_MAX) { [int]$env:REGULATOR_MAX } else { 4 }
 if (-not (Test-Path $dir)) { exit 0 }
 
@@ -171,6 +172,13 @@ if (Test-Path (Split-Path $historyFile)) {
             [IO.File]::WriteAllText($historyFile, (($keep -join "`n") + "`n"), $utf8)
         }
     } catch {}
+}
+
+# Agents encore au travail (écrits par le mod agents-status juste avant ce hook ; un fichier de plus
+# d'une minute vient d'une session passée) : un nouveau message ne doit pas doubler leur travail.
+if ((Test-Path $runningFile) -and ((Get-Date) - (Get-Item $runningFile).LastWriteTime).TotalSeconds -lt 60) {
+    $busy = @([IO.File]::ReadAllLines($runningFile, $utf8) | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    if ($busy.Count) { "[Régulateur] Agents encore au travail : $($busy -join ', ') (règle 14)." }
 }
 
 $text = ' ' + (Normalize-Text $prompt) + ' '

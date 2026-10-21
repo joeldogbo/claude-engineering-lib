@@ -129,6 +129,17 @@ for shell in shells:
     fails += not ok
     print(f"{'ok  ' if ok else 'FAIL'} [{shell}] collage énorme bloqué avant le modèle" + ("" if ok else f" -> {code} {err!r} {passed}"))
 
+    # Agents encore au travail : signalés si la liste est fraîche, ignorés si elle date d'une session passée.
+    with tempfile.TemporaryDirectory() as hooks:
+        running = pathlib.Path(hooks, "agents.running")
+        running.write_text("frontend\nbackend\n", encoding="utf-8")
+        fresh = raw_run(shell, "ajoute un bouton", REGULATOR_RUNNING_FILE=str(running))[1]
+        os.utime(running, (running.stat().st_atime - 300, running.stat().st_mtime - 300))
+        stale = raw_run(shell, "ajoute un bouton", REGULATOR_RUNNING_FILE=str(running))[1]
+        ok = "Agents encore au travail : frontend, backend" in fresh and "encore au travail" not in stale
+        fails += not ok
+        print(f"{'ok  ' if ok else 'FAIL'} [{shell}] agents encore au travail signalés" + ("" if ok else f" -> {fresh!r} | {stale!r}"))
+
     # Demande répétée : signalée au second envoi d'un message reformulé, jamais pour un message différent ou court.
     with tempfile.TemporaryDirectory() as hooks:
         history = str(pathlib.Path(hooks, "prompts.log"))

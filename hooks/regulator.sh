@@ -31,6 +31,7 @@ DIR="${REGULATOR_AGENTS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/agents}"
 PROGRESS_DIR="${REGULATOR_PROGRESS_DIR:-${CLAUDE_PROJECT_DIR:-.}/.claude/progress}"
 LAST_FILE="${REGULATOR_LAST_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/regulator.last}"
 HISTORY_FILE="${REGULATOR_HISTORY_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/prompts.log}"
+RUNNING_FILE="${REGULATOR_RUNNING_FILE:-${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/agents.running}"
 MAX="${REGULATOR_MAX:-4}"
 [[ -d "$DIR" ]] || exit 0
 
@@ -179,6 +180,13 @@ if [[ -d "$(dirname "$HISTORY_FILE")" ]]; then
     { [[ -f "$HISTORY_FILE" ]] && tail -n 199 "$HISTORY_FILE"; printf '%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "$WORDS"; } >"$HISTORY_FILE.new" 2>/dev/null \
       && mv "$HISTORY_FILE.new" "$HISTORY_FILE"
   fi
+fi
+
+# Agents encore au travail (écrits par le mod agents-status juste avant ce hook ; un fichier de plus
+# d'une minute vient d'une session passée) : un nouveau message ne doit pas doubler leur travail.
+if [[ -n "$(find "$RUNNING_FILE" -mmin -1 2>/dev/null)" ]]; then
+  BUSY="$(awk 'NF { sub(/\r$/, ""); printf "%s%s", (n++ ? ", " : ""), $0 }' "$RUNNING_FILE")"
+  if [[ -n "$BUSY" ]]; then echo "[Régulateur] Agents encore au travail : $BUSY (règle 14)."; fi
 fi
 
 SELECTED="$(registry | REGULATOR_PROMPT="$PROMPT" awk -F'\t' "$NORMALIZE"'

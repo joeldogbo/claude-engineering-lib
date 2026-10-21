@@ -20,6 +20,32 @@ describe('ligne du régulateur', () => {
   })
 })
 
+describe('agents au travail pour le régulateur', () => {
+  test('les écrit avant que le régulateur lise le nouveau message', async ($, on) => {
+    const order: string[] = []
+    let written: { path: string; text: string } | undefined
+    on('fs.write', ($, e) => {
+      written = e
+      order.push('écriture')
+      return { value: undefined } as never
+    })
+    on('fs.read', () => ({ value: '' }) as never)
+    on('agent.list', () => ({ value: [
+      { id: 'a1', type: 'frontend', status: 'running', description: 'lecteur PDF' },
+      { id: 'a2', type: 'backend', status: 'completed', description: 'lot terminé' },
+    ] }) as never)
+    // Sous le mod, à la place de l'engine : là où tournent les hooks UserPromptSubmit (le régulateur).
+    on('prompt.submit', () => {
+      order.push('régulateur')
+      return {} as never
+    })
+    await $.prompt.submit({ text: 'ajoute un bouton', asUser: true })
+    expect(order).toEqual(['écriture', 'régulateur'])
+    expect(written?.path).toMatch(/hooks\/agents\.running$/)
+    expect(written?.text).toBe('frontend\n')
+  })
+})
+
 describe('ligne d’activité', () => {
   test('nomme les agents au travail sur chaque surface', async ($, on) => {
     mock.clock(on)

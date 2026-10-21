@@ -35,13 +35,16 @@ export const register: Register = on => {
   poll = undefined
 
   on('prompt.submit', async ($, e, next) => {
+    // Le mod vit dans .claude/skills/agents-status/ ; le régulateur lit et écrit dans .claude/hooks/.
+    // Avant next(e), qui lance le régulateur (hook UserPromptSubmit) : les agents encore au travail,
+    // pour qu'un nouveau message ne lance pas un second agent sur le même travail.
+    const busy = await refresh($)
+    await $.fs.write(`${$.plugin.root}/../../hooks/agents.running`, busy.map(n => `${n}\n`).join('')).catch(() => {})
     const result = await next(e)
     if (result.drop === undefined) {
-      // Le mod vit dans .claude/skills/agents-status/ ; le régulateur écrit dans .claude/hooks/.
       const text = await $.fs.read(`${$.plugin.root}/../../hooks/regulator.last`).catch(() => '')
       const names = parseRetained(typeof text === 'string' ? text : '')
       await update($, retained, () => names)
-      await update($, running, () => [])
       await show($)
     }
     return result

@@ -228,7 +228,8 @@ Le mod `agents-status` (`.claude/skills/agents-status/`), chargé automatiquemen
 
 - **sous la zone de saisie**, la ligne d'état affiche `◆ Agents retenus : backend, api` après chaque message, puis `▶ Agents au travail : backend` tant qu'un agent tourne ;
 - **dans la ligne d'activité animée**, le texte devient « Agent backend au travail… » ;
-- **dans le fil de la conversation**, Claude annonce les agents lancés et chaque appel d'agent porte son nom (`backend : endpoint de présence`).
+- **dans le fil de la conversation**, Claude annonce les agents lancés et chaque appel d'agent porte son nom (`backend : endpoint de présence`) ;
+- **pour le régulateur** : tu peux écrire pendant que des agents travaillent. Juste avant le régulateur, le mod écrit la liste des agents encore au travail dans `.claude/hooks/agents.running` (ignoré par git), et le régulateur la signale. Si ton message concerne leur travail, Claude le leur transmet au lieu de lancer un second agent sur les mêmes fichiers : pas de modifications qui s'écrasent, pas de jetons dépensés en double.
 
 Les agents, comme ce mod, ne sont chargés qu'**au démarrage d'une session** : après une installation, redémarre Claude Code (ou recharge la fenêtre VS Code). Le régulateur écrit sa sélection dans `.claude/hooks/regulator.last`, ignoré par git, que le mod relit.
 

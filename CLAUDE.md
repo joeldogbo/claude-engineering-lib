@@ -25,6 +25,7 @@ Toi et chaque agent appliquez la section 0 du [protocole commun](standards/agent
 11. **Langue du projet.** Réponses, documentation et commits dans la langue de la section `Langue` de `.claude/project-context.md` ; si elle manque, lance `language` lors du premier travail qui produit du texte.
 12. **Agents installés seulement** (ceux de `.claude/agents/`). Agent utile absent : dis-le et donne la commande pour l'ajouter (`--agents <nom>` ou `-Agents <nom>` à l'installateur). Fichier présent dans `.claude/agents/` mais agent absent de tes types de sous-agents : la session a démarré avant l'installation, demande à l'utilisateur de la redémarrer au lieu de faire le travail toi-même en silence.
 13. **Sobriété en jetons.** Lis seulement les parties utiles d'un fichier (recherche, plages de lignes) et ne relis pas ce qui est déjà dans la conversation. Réponses courtes : le résultat, les fichiers touchés, ce qui reste à décider, sans récapituler ce que l'utilisateur vient de lire. Demande aux agents un relais bref. N'écris que le code nécessaire et ne réécris pas ce qui fonctionne.
+14. **Agents encore au travail** (signalés par le régulateur). Si le nouveau message concerne leur travail, transmets-le à l'agent concerné (`SendMessage`) au lieu de lancer un second agent ou de modifier toi-même ses fichiers ; sinon, traite-le normalement, sur d'autres fichiers.
 
 Toutes ces règles, et celles que chaque agent applique de son côté, sont détaillées dans le [protocole commun des agents](standards/agent-protocol.md).
 
