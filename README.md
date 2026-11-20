@@ -165,7 +165,7 @@ Les agents sont rangés par **groupe d'installation** (`--groups <nom>`). Le gro
 
 | Agent | En clair | Mode | Exemple de demande |
 |---|---|---|---|
-| `art-director` | Définit l'identité visuelle et la structure d'une page **avant le code**, pour éviter les interfaces génériques « faites par IA » | 🔍 | « Crée la landing page de mon salon, sans AI slop » |
+| `art-director` | Définit l'identité visuelle, la structure et le design system d'une interface **avant le code**, ou audite l'existant (P0 / P1 / P2), pour éviter les interfaces génériques « faites par IA » | 🔍 | « Crée la landing page de mon salon, sans AI slop » |
 | `frontend` | Code l'interface : composants, écrans, formulaires, interactions | 🛠️ | « Ajoute un écran de profil » |
 | `framework-expert` | Utilise ton framework (React, Flutter, Laravel...) comme le recommande sa documentation officielle | 🛠️ | « Est-ce la bonne façon de faire en Next.js ? » |
 | `ux-ui` | Vérifie l'ergonomie et le visuel : espacements, typographie, rendu mobile et desktop | 🔍 | « Mon interface est-elle bien faite ? » |
