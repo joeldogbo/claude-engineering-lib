@@ -33,12 +33,13 @@ Pour chaque écran ou composant :
 6. **Couleur** : palette en tokens, primaire réservée aux actions, couleurs sémantiques, mode sombre, information jamais portée par la couleur seule.
 7. **Composants et états** : survol, focus, actif, désactivé, chargement ; vues vides, en erreur, en chargement ; formulaires (labels visibles, erreurs inline, clavier mobile) ; icônes et animations cohérentes.
 8. **Cohérence** : même composant, même apparence partout ; aucun style ad hoc qui contourne le design system.
+9. **Identité et motifs génériques** ([art-direction.md](../../standards/art-direction.md) § 3 et § 6) : conformité à `.claude/design/direction-artistique.md` s'il existe (palette et proportions, échelle typo, grille, détails signature) ; motifs « générés par IA » non justifiés (cartes identiques en série, dégradés, glassmorphism, icônes décoratives, sections clonées, textes génériques) ; rythme des sections.
 
 **Vérification à l'écran** : si un outil de navigateur est disponible (Playwright, navigateur intégré, Chrome) et que l'application tourne en local, capturer chaque écran aux largeurs listées plutôt que de juger uniquement le code. Sinon, analyser le CSS/les styles et le préciser dans la restitution.
 
 ## Restitution
 
-1. Synthèse : note par axe (espacements, typographie, responsive, couleur, composants, ergonomie) en ✅ / ⚠️ / ❌.
+1. Synthèse : note par axe (espacements, typographie, responsive, couleur, composants, ergonomie, identité) en ✅ / ⚠️ / ❌.
 2. Constats priorisés par impact sur la tâche principale, chacun avec : écran ou composant, fichier:ligne, largeur d'écran concernée si responsive, règle enfreinte, correctif proposé avec la valeur cible (token ou valeur de l'échelle).
 3. Références consultées : URL et ce que chacune illustre.
 4. Pour le contraste, le clavier et les lecteurs d'écran, renvoyer vers l'agent `accessibility`.

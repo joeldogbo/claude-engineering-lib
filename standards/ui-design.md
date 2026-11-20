@@ -1,6 +1,6 @@
 # Design d'interface — règles mesurables et sources de référence
 
-Fiche lue par l'agent `ux-ui` et le skill `ui-ux-review`. Les valeurs ci-dessous sont des **repères par défaut** : si le projet a un design system (tokens, thème Tailwind, variables CSS, thème Flutter/Material, `theme.ts`), c'est lui qui fait foi, et l'écart à ce système est le premier constat à relever.
+Fiche lue par l'agent `ux-ui` et le skill `ui-ux-review` ; les choix d'identité (palette, typographie, composition, motifs génériques à éviter) sont dans [art-direction.md](art-direction.md). Les valeurs ci-dessous sont des **repères par défaut** : si le projet a un design system (tokens, thème Tailwind, variables CSS, thème Flutter/Material, `theme.ts`), c'est lui qui fait foi, et l'écart à ce système est le premier constat à relever.
 
 ## 1. Espacements
 

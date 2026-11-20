@@ -25,6 +25,7 @@ CASES = {
     "/workflow release": "silence",
     "Rédige le manuel utilisateur et le manuel de déploiement": ({"manuals"}, set()),
     "traduis l'interface en anglais": ({"language"}, set()),
+    "crée une landing page pour mon salon de coiffure, sans AI slop": ({"art-director"}, set()),
 }
 
 # prompt -> fragments attendus dans la sortie : chaîne N1 → N2 affichée au contrôleur

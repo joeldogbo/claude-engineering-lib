@@ -121,7 +121,7 @@ cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE
 
 ## Contenu
 
-48 agents, 24 skills, 12 standards de référence (dont le [protocole commun des agents](standards/agent-protocol.md)), 7 templates et 15 workflows invocables via `/workflow <nom>`. Ces index vivent ici plutôt que dans `CLAUDE.md`, relu à chaque session : Claude Code charge déjà la description de chaque agent et de chaque skill.
+49 agents, 24 skills, 13 standards de référence (dont le [protocole commun des agents](standards/agent-protocol.md)), 7 templates et 16 workflows invocables via `/workflow <nom>`. Ces index vivent ici plutôt que dans `CLAUDE.md`, relu à chaque session : Claude Code charge déjà la description de chaque agent et de chaque skill.
 
 ### Agents
 
@@ -150,6 +150,7 @@ cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE
 | `versioning` | Numéro de version SemVer déduit des commits, mis à jour dans tous les fichiers, tag après accord | Implémentation |
 | `testing` | Stratégie de tests unitaires/intégration/E2E | Implémentation |
 | `ux-ui` | Ergonomie, hiérarchie visuelle, espacements, typographie, responsive 320–1920 px, cohérence avec le design system, comparaison avec des références externes | Analyse seule |
+| `art-director` | Direction artistique avant le code : secteur, public, objectif, palette, typographie, grille, images, structure de page et schémas desktop/mobile à valider ; évite les interfaces génériques « générées par IA » | Analyse seule |
 | `accessibility` | Accessibilité (a11y), contraste, navigation clavier | Analyse seule |
 | `documentation` | README, ADR, doc technique/utilisateur, changelog | Implémentation |
 | `manuals` | Manuels développeur, utilisateur et de déploiement, rédigés depuis le code réel, commandes vérifiées | Implémentation |
