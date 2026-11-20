@@ -125,57 +125,120 @@ cp -r claude-engineering-lib/{agents,skills,standards,templates,workflows,CLAUDE
 
 ### Agents
 
-| Agent | Rôle | Mode |
-|---|---|---|
-| `architect` | Architecture globale, découpage modules, dépendances, évolutivité | Analyse seule |
-| `project-context` | Mémoire commune du projet (`.claude/project-context.md`), briefs et relais entre agents, glossaire ; dirigé par le contrôleur, ne lance aucun agent | Coordination |
-| `request-history` | Demande déjà traitée ? Vérifie ce qui est fait, ce qui manque et ce qui a changé avant de refaire (signalé par le régulateur) | Analyse seule |
-| `knowledge-base` | Base de connaissances en graphe (Graphify, ou carte légère `.claude/knowledge/`) : qui appelle quoi, flux, impact d'un changement | Implémentation |
-| `backend` | Logique métier, services, couche domaine côté serveur | Implémentation |
-| `frontend` | UI, composants, état, interactions client | Implémentation |
-| `multimedia` | Images, vidéos, audio et musique : formats, compression, tailles adaptées, chargement différé, streaming, téléversements sûrs, accessibilité, droits | Implémentation |
-| `framework-expert` | Usage idiomatique des frameworks et bibliothèques UI de la version installée, documentation officielle, API dépréciées | Implémentation |
-| `database` | Schéma, index, contraintes, migrations, intégrité | Implémentation |
-| `database-builder` | Création rapide et robuste d'une base : diagramme entité-relation, contraintes, index, migrations, seeders, tests de contraintes | Implémentation |
-| `security` | Scan local (statique, secrets, dépendances), OWASP Web + API, score /100 et note A-F | Analyse seule |
-| `security-fixer` | Corrige en local les constats d'un audit, un par un : test de non-régression, nouveau scan, score avant/après | Implémentation |
-| `performance` | CPU, mémoire, cache, requêtes N+1, pagination | Analyse seule |
-| `load-testing` | Tests de charge, pic, stress, endurance et scalabilité : capacité maximale, point de rupture, premier goulot, dimensionnement | Implémentation |
-| `devops` | Pipelines CI/CD, build, déploiement, rollback | Implémentation |
-| `dependencies` | Dépendances de tout écosystème : obsolètes, vulnérables, licences, doublons ; montées de version majeures pas à pas ; Dependabot/Renovate | Implémentation |
-| `incident-response` | Incident de production : impact, stabilisation réversible, cause prouvée, correctif, post-mortem sans blâme | Implémentation |
-| `deployment-advisor` | Choix de l'hébergement et de l'architecture de déploiement, coûts, stratégie de mise en production, checklist de mise en ligne | Analyse seule |
-| `specifications` | Cahier des charges : objectifs, périmètre, user stories et critères d'acceptation, exigences non fonctionnelles chiffrées, lots et tickets | Implémentation |
-| `git` | Commits cohérents, synchronisation avec le distant, push après accord explicite de l'utilisateur | Implémentation |
-| `versioning` | Numéro de version SemVer déduit des commits, mis à jour dans tous les fichiers, tag après accord | Implémentation |
-| `testing` | Stratégie de tests unitaires/intégration/E2E | Implémentation |
-| `ux-ui` | Ergonomie, hiérarchie visuelle, espacements, typographie, responsive 320–1920 px, cohérence avec le design system, comparaison avec des références externes | Analyse seule |
-| `art-director` | Direction artistique avant le code : secteur, public, objectif, palette, typographie, grille, images, structure de page et schémas desktop/mobile à valider ; évite les interfaces génériques « générées par IA » | Analyse seule |
-| `accessibility` | Accessibilité (a11y), contraste, navigation clavier | Analyse seule |
-| `documentation` | README, ADR, doc technique/utilisateur, changelog | Implémentation |
-| `manuals` | Manuels développeur, utilisateur et de déploiement, rédigés depuis le code réel, commandes vérifiées | Implémentation |
-| `language` | Langue de travail du projet inscrite dans le contexte pour tous les agents, mélanges de langues, internationalisation et traduction | Implémentation |
-| `code-reviewer` | Lisibilité, duplication, complexité, conventions | Analyse seule |
-| `refactoring` | Simplification, extraction, suppression de duplication | Implémentation |
-| `api` | Conception REST/GraphQL/gRPC/WebSocket | Implémentation |
-| `api-resilience` | Robustesse de tout type d'API : validation, erreurs, idempotence, limites, timeouts, retries, disjoncteur, tests de panne | Implémentation |
-| `debugging` | Méthodologie de reproduction/isolation/correction de bug | Implémentation |
-| `seo` | Référencement naturel : meta, données structurées, sitemap, robots.txt | Implémentation |
-| `geo` | Optimisation pour moteurs génératifs/IA : citabilité, llms.txt | Implémentation |
-| `compliance` | Orchestre un audit de conformité : répartit les axes, arbitre les fichiers partagés, consolide le rapport | Coordination |
-| `legal` | Pages légales : mentions, CGU, remboursement (jamais d'avis juridique) | Implémentation |
-| `privacy` | Données personnelles : inventaire, minimisation, droits, politique de confidentialité | Implémentation |
-| `consent` | Cookies et traceurs : inventaire, blocage préalable, bandeau, politique de cookies | Implémentation |
-| `payments` | Cycle de paiement, tout prestataire : webhooks signés, états, remboursements, renouvellements, réconciliation, accès de chaque payeur | Implémentation |
-| `integrations` | API externes (création de comptes, progression, retrait des accès) et tâches planifiées réellement exécutées en production | Implémentation |
-| `ai-chatbot` | Chatbot IA, tout fournisseur : consignes, garde-fous, changement de modèle, réponses coupées, repli FAQ, questions pièges | Implémentation |
-| `emails` | E-mails automatiques : modèles, reçus, bienvenue, rappels, billets, déclencheurs, délivrabilité | Implémentation |
-| `financial-compliance` | Promesses de rendement, conseil personnalisé, avertissements manquants dans le site, le chatbot et les e-mails — ne remplace pas un juriste | Analyse seule |
-| `prompt-compressor` | Compresse les prompts relus à chaque session ou requête (CLAUDE.md, agents, skills, prompt système) sans perdre de règle, gain mesuré ; propose ponytail pour réduire le code généré | Implémentation |
-| `mcp-developer` | Serveurs MCP : transport, outils bien décrits, validation, permissions minimales, tests avec l'inspecteur, déclaration dans `.mcp.json` | Implémentation |
-| `token-monitor` | Consommation de jetons de Claude Code d'après ses journaux locaux : par jour, projet, modèle, sous-agents, sessions ; actions pour consommer moins | Analyse seule |
-| `system-monitor` | Lenteur du poste (Windows, macOS, Linux) : processeur, RAM et swap, disque, usure de la batterie, processus et outils de dev gourmands | Analyse seule |
-| `reverse-engineering` | Étudie une fonctionnalité d'une application existante (site, web, Electron, mobile, bureau, open source) pour la reproduire en mieux : preuves observé/déduit/inconnu, forces et faiblesses, fiche adaptée à la stack, salle blanche | Analyse seule |
+Tu n'as pas à les appeler : décris ta tâche, le [régulateur](#le-régulateur) choisit les bons agents. Tu peux aussi en nommer un (« utilise l'agent `seo` »).
+
+**Trois façons de travailler :**
+- 🔍 **Analyse** : il lit le projet et te remet un rapport, sans rien modifier.
+- 🛠️ **Action** : il modifie le code ou les fichiers.
+- 🧭 **Coordination** : il organise le travail des autres agents.
+
+Un agent d'analyse est souvent suivi de son agent d'action : `security` trouve les failles, puis `security-fixer` les corrige.
+
+Les agents sont rangés par **groupe d'installation** (`--groups <nom>`). Le groupe `core` est toujours installé.
+
+#### `core` — le socle
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `project-context` | Tient la mémoire commune du projet pour que les agents partagent les mêmes infos | 🧭 | *(automatique)* |
+| `request-history` | Vérifie si une demande a déjà été traitée, pour ne refaire que ce qui manque | 🔍 | *(automatique)* |
+| `language` | Fixe la langue du projet (docs, interface, commits) et gère les traductions | 🛠️ | « Traduis l'interface en anglais » |
+| `specifications` | Rédige le cahier des charges : objectifs, user stories, critères d'acceptation | 🛠️ | « Écris le cahier des charges de mon appli de réservation » |
+| `architect` | Juge l'organisation du code : modules, dépendances, évolutivité | 🔍 | « Mon projet est-il bien structuré ? » |
+| `code-reviewer` | Relit le code : lisibilité, duplication, complexité | 🔍 | « Relis mes dernières modifications » |
+| `refactoring` | Simplifie et nettoie le code sans changer son comportement | 🛠️ | « Ce fichier fait 800 lignes, découpe-le » |
+| `testing` | Écrit les tests unitaires, d'intégration et de bout en bout | 🛠️ | « Ajoute des tests sur le panier » |
+| `debugging` | Reproduit un bug, trouve sa cause et le corrige | 🛠️ | « Erreur 500 sur /api/orders » |
+| `git` | Fait des commits propres et pousse après ton accord | 🛠️ | « Commit et push » |
+| `versioning` | Calcule le numéro de version et le met à jour partout | 🛠️ | « Prépare la version suivante » |
+| `reverse-engineering` | Étudie une fonctionnalité d'une appli existante pour la refaire en mieux, sans la copier | 🔍 | « Je veux la même recherche que sur Airbnb » |
+
+#### `docs` — documentation
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `documentation` | README, changelog, décisions d'architecture (ADR) | 🛠️ | « Mets le README à jour » |
+| `manuals` | Manuels développeur, utilisateur et de déploiement, écrits d'après le vrai code | 🛠️ | « Rédige le manuel utilisateur » |
+| `knowledge-base` | Carte du code : qui appelle quoi, impact d'un changement | 🛠️ | « Que casse-t-on si on modifie User ? » |
+
+#### `ui` — interface
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `art-director` | Définit l'identité visuelle et la structure d'une page **avant le code**, pour éviter les interfaces génériques « faites par IA » | 🔍 | « Crée la landing page de mon salon, sans AI slop » |
+| `frontend` | Code l'interface : composants, écrans, formulaires, interactions | 🛠️ | « Ajoute un écran de profil » |
+| `framework-expert` | Utilise ton framework (React, Flutter, Laravel...) comme le recommande sa documentation officielle | 🛠️ | « Est-ce la bonne façon de faire en Next.js ? » |
+| `ux-ui` | Vérifie l'ergonomie et le visuel : espacements, typographie, rendu mobile et desktop | 🔍 | « Mon interface est-elle bien faite ? » |
+| `accessibility` | Vérifie que tout le monde peut utiliser l'interface : contrastes, clavier, lecteurs d'écran | 🔍 | « Mon site est-il accessible ? » |
+| `multimedia` | Images, vidéos et audio : formats, poids, chargement, téléversements | 🛠️ | « Mes images sont trop lourdes » |
+
+#### `backend` — serveur
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `backend` | Code la logique métier côté serveur | 🛠️ | « Calcule les frais de livraison » |
+| `api` | Conçoit les API (REST, GraphQL, WebSocket...) | 🛠️ | « Crée l'API des commandes » |
+| `api-resilience` | Rend une API robuste : validation, erreurs, délais, nouvelles tentatives | 🛠️ | « Mon API plante quand le paiement est lent » |
+| `database` | Schéma, index, migrations, intégrité des données | 🛠️ | « Ajoute une table des factures » |
+| `database-builder` | Crée une base complète d'un coup : schéma, migrations, données de test | 🛠️ | « Crée la base de mon appli de cours » |
+| `integrations` | Connecte des services externes et fait tourner les tâches planifiées | 🛠️ | « Synchronise les inscrits avec Moodle » |
+| `emails` | E-mails automatiques : bienvenue, reçus, rappels | 🛠️ | « Envoie un reçu après chaque achat » |
+
+#### `security` — sécurité
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `security` | Cherche les failles et donne une note de sécurité sur 100 | 🔍 | « Audite la sécurité du projet » |
+| `security-fixer` | Corrige les failles trouvées, une par une, avec un test pour chacune | 🛠️ | « Corrige les failles de l'audit » |
+
+#### `performance` — performance
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `performance` | Trouve ce qui ralentit l'application : requêtes, mémoire, cache | 🔍 | « La page des commandes est lente » |
+| `load-testing` | Mesure combien d'utilisateurs l'application supporte avant de céder | 🛠️ | « Tiendra-t-on 1 000 visiteurs simultanés ? » |
+
+#### `ops` — mise en production
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `deployment-advisor` | Conseille l'hébergement, les coûts et la mise en ligne | 🔍 | « Où héberger mon site ? » |
+| `devops` | Met en place la CI/CD, le build et le déploiement | 🛠️ | « Déploie automatiquement à chaque push » |
+| `dependencies` | Met à jour les dépendances obsolètes ou vulnérables | 🛠️ | « Mes paquets sont-ils à jour ? » |
+| `incident-response` | Gère une panne en production, de la stabilisation au compte rendu | 🛠️ | « Le site est tombé ! » |
+
+#### `seo` — visibilité web
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `seo` | Référencement Google : balises, sitemap, données structurées | 🛠️ | « Améliore le SEO de mon site » |
+| `geo` | Visibilité dans les IA (ChatGPT, Perplexity...) : contenu citable, `llms.txt` | 🛠️ | « Fais en sorte que les IA citent mon site » |
+
+#### `compliance` — conformité
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `compliance` | Orchestre un audit de conformité complet et en fait la synthèse | 🧭 | « Mon site est-il conforme ? » |
+| `legal` | Pages légales : mentions, CGU, remboursement (pas un avis juridique) | 🛠️ | « Rédige mes CGU » |
+| `privacy` | Données personnelles : ce qui est collecté, droits, politique de confidentialité | 🛠️ | « Suis-je conforme au RGPD ? » |
+| `consent` | Cookies et traceurs : bandeau, blocage avant accord, politique de cookies | 🛠️ | « Ajoute un bandeau cookies » |
+| `financial-compliance` | Repère les promesses de gains ou conseils financiers risqués (pas un avis juridique) | 🔍 | « Mes textes sur l'investissement sont-ils risqués ? » |
+
+#### `business` — métier en ligne
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `payments` | Paiements de bout en bout : webhooks, remboursements, abonnements | 🛠️ | « Le client a payé mais n'a pas accès » |
+| `ai-chatbot` | Chatbot IA : consignes, garde-fous, réponses fiables | 🛠️ | « Mon chatbot invente des réponses » |
+
+#### `tooling` — outils du poste
+
+| Agent | En clair | Mode | Exemple de demande |
+|---|---|---|---|
+| `token-monitor` | Montre ce que Claude Code consomme en jetons et comment réduire | 🔍 | « Combien de jetons cette semaine ? » |
+| `prompt-compressor` | Raccourcit les prompts relus à chaque session sans perdre de règle | 🛠️ | « Mes prompts gaspillent des jetons » |
+| `system-monitor` | Diagnostique un PC lent : processeur, mémoire, disque, batterie | 🔍 | « Mon PC est très lent » |
+| `mcp-developer` | Crée des serveurs MCP pour donner de nouveaux outils à Claude | 🛠️ | « Crée un serveur MCP pour mon API » |
 
 ### Skills
 
